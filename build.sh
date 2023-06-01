@@ -17,16 +17,26 @@ if [ -z "$ver" ]; then
   pushd "$ver" >/dev/null
 fi
 
+isapp=
+isapp=$(echo "$ver" | grep -wqs "^[1-9]" || echo 'yes')
+
 user=$(docker info | grep 'Username' | awk '{print $2}')
 [ -z "$user" ] || user="$user/"
+
+if [ -f "tags" ]; then
+  tags=($(cat tags))
+  for tag in "${tags[@]}"; do
+    set -- -t ${user}php:$tag "$@"
+  done
+elif [ "${ver/-/}" == "$ver" ]; then
+  set -- -t ${user}php:$ver-alpine "$@"
+fi
 
 name=${user}php:$ver
 set -- -t $name "$@"
 
-if [ "${name/-/}" == "$name" ]; then
-  name="$name-alpine"
-  set -- -t $name "$@"
-fi
-
 docker build . "$@"
-docker run --rm -v ./:/tmp/host $name /bin/sh -c "cp -uv /usr/local/etc/php/php.ini /tmp/host/php.ini"
+
+if [ -z "$isapp" ]; then
+  docker run --rm -v ./:/tmp/host $name /bin/sh -c "cp -uv /usr/local/etc/php/php.ini /tmp/host/php.ini"
+fi

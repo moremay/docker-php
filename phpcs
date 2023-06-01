@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -e
+
+p=.
+standard=PHPCompatibility
+
+params=()
+
+while [ $# -gt 0 ]; do
+    case $1 in
+    -p)
+        shift
+        [ -z "$1" ] || p="$1"
+        ;;
+    --standard)
+        shift
+        [ -z "$1" ] || standard="$1"
+        ;;
+    --version)
+        shift
+        [ -z "$1" ] || params=("${params[@]}" --runtime-set testVersion "$1")
+        ;;
+    *)
+        params=("${params[@]}" "$1")
+        ;;
+    esac
+    shift
+done
+
+docker run --rm -it -v "$p"/:/var/www/html moremay/php:cmpt phpcs -p /var/www/html --extensions=php --standard="$standard" "${params[@]}"

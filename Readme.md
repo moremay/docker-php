@@ -4,6 +4,18 @@ Thanks [docker-library/php](https://github.com/docker-library/php)
 
 Build images for php-fpm.
 
+# Docker Image for PHPCompatibility
+
+[![PHPCompatibilityAll Current Version](https://poser.pugx.org/phpcompatibility/phpcompatibility-all/v) PHPCompatibilityAll](https://github.com/PHPCompatibility/PHPCompatibilityAll)
+
+    wget https://raw.githubusercontent.com/moremay/docker-php/master/phpcs
+    chmod u+x phpcs
+    ./phpcs [-p .]|<-p path/to/html> [--standard PHPCompatibility[,...]] [--version ver_min[-[ver_max]]]
+
+[PHP CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) installed coding standards
+
+    ./phpcs -i
+
 # Extensions
 
 需要其它库、需要编译时开启或需要注意的扩展：
