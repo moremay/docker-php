@@ -1,8 +1,9 @@
-name: Docker Image CI
+name: "CI: 8.2"
 
 on:
   push:
-    branches: [ "master" ]
+    paths:
+      - "8.2/*"
   schedule:
     - cron: 0 0 * * 6
 
@@ -28,20 +29,3 @@ jobs:
         tags: |
           moremay/php:8.2
           moremay/php:8.2-alpine
-
-  build_cmpt:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Build the Docker image
-      uses: actions/checkout@v3
-
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_NAME }}
-        password: ${{ secrets.DOCKER_TOKEN }}
-
-    - name: Build and push
-      shell: bash
-      run: |
-        ./build.sh cmpt && docker push moremay/php --all-tags
