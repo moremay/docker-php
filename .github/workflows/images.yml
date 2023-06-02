@@ -44,4 +44,4 @@ jobs:
     - name: Build and push
       shell: bash
       run: |
-        ./build.sh cmpt && docker push moremay/php --all
+        ./build.sh cmpt && docker push moremay/php --all-tags
