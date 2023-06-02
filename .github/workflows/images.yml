@@ -3,7 +3,9 @@ name: Docker Image CI
 on:
   push:
     branches: [ "master" ]
-    
+  schedule:
+    - cron: 0 0 * * 6
+
 jobs:
   build_82:
     runs-on: ubuntu-latest
@@ -26,7 +28,7 @@ jobs:
         tags: |
           moremay/php:8.2
           moremay/php:8.2-alpine
-          
+
   build_cmpt:
     runs-on: ubuntu-latest
     steps:
