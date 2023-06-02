@@ -23,20 +23,25 @@ isapp=$(echo "$ver" | grep -wqs "^[1-9]" || echo 'yes')
 user=$(docker info | grep 'Username' | awk '{print $2}')
 [ -z "$user" ] || user="$user/"
 
-if [ -f "tags" ]; then
-  tags=($(cat tags))
-  for tag in "${tags[@]}"; do
-    set -- -t ${user}php:$tag "$@"
-  done
-elif [ "${ver/-/}" == "$ver" ]; then
-  set -- -t ${user}php:$ver-alpine "$@"
-fi
-
-name=${user}php:$ver
-set -- -t $name "$@"
-
-docker build . "$@"
+docker build . -t temp "$@"
 
 if [ -z "$isapp" ]; then
-  docker run --rm -v ./:/tmp/host $name /bin/sh -c "cp -uv /usr/local/etc/php/php.ini /tmp/host/php.ini"
+  docker run --rm -v ./:/tmp/host temp /bin/sh -c "cp -uv /usr/local/etc/php/php.ini /tmp/host/php.ini"
 fi
+
+tags=($ver)
+if [ -x "tags.sh" ]; then
+  tags=("${tags[@]}" $(./tags.sh))
+elif [ -f "tags" ]; then
+  tags=("${tags[@]}" $(cat tags))
+else
+  [ "${ver/-/}" == "$ver" ] && tags=("${tags[@]}" "$ver-alpine")
+fi
+
+for tag in "${tags[@]}"; do
+  docker tag temp ${user}php:$tag
+done
+
+docker rmi temp
+
+echo -e "\033[36;1m>>> ${tags[@]}\033[0m"

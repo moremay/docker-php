@@ -1,12 +1,14 @@
-# Docker Image for PHP-FPM
+# Docker Image for PHP
 
-Thanks [docker-library/php](https://github.com/docker-library/php)
+## PHP-FPM
+
+Thank [docker-library/php](https://github.com/docker-library/php)
 
 Build images for php-fpm.
 
-# Docker Image for PHPCompatibility
+## PHPCompatibility
 
-[![PHPCompatibilityAll Current Version](https://poser.pugx.org/phpcompatibility/phpcompatibility-all/v) PHPCompatibilityAll](https://github.com/PHPCompatibility/PHPCompatibilityAll)
+[PHPCompatibility ![PHPCompatibility Current Version](https://poser.pugx.org/phpcompatibility/php-compatibility/v)](https://github.com/PHPCompatibility/PHPCompatibility)
 
     wget https://raw.githubusercontent.com/moremay/docker-php/master/phpcs
     chmod u+x phpcs
@@ -16,7 +18,7 @@ Build images for php-fpm.
 
     ./phpcs -i
 
-# Extensions
+## Extensions
 
 需要其它库、需要编译时开启或需要注意的扩展：
 
