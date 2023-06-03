@@ -1,4 +1,4 @@
-# Docker Image for PHP
+# Docker Images for PHP
 
 ## PHP-FPM
 

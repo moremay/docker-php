@@ -25,3 +25,4 @@ jobs:
       run: |
         ./build.sh cmpt
         docker push moremay/php --all-tags
+        docker push moremay/phpcompatibility --all-tags

@@ -38,10 +38,14 @@ else
   [ "${ver/-/}" == "$ver" ] && tags=("${tags[@]}" "$ver-alpine")
 fi
 
+names=()
 for tag in "${tags[@]}"; do
-  docker tag temp ${user}php:$tag
+  name="${user}php:$tag"
+  [ "${tag/:/}" == "$tag" ] || name="${user}$tag"
+  names=("${names[@]}" $name)
+  docker tag temp $name
 done
 
 docker rmi temp
 
-echo -e "\033[36;1m>>> ${tags[@]}\033[0m"
+echo -e "\033[36;1m>>> ${names[@]}\033[0m"
