@@ -47,11 +47,11 @@ RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 	\
 	OPENSSL_NAME='openssl-1.0.2u'; \
 	OPENSSL_URL="https://www.openssl.org/source/old/1.0.2/$OPENSSL_NAME.tar.gz"; \
-	OPENSSL_SHA1='740916d79ab0d209d2775277b1c6c3ec2f6502b2'; \
+	OPENSSL_SHA256='ecd0c6ffb493dd06707d38b14bb4d8c2288bb7033735606569d8f90f89669d16'; \
 	\
 	cd /usr/src; \
 	curl -O "$OPENSSL_URL"; \
-	echo "$OPENSSL_SHA1 *$OPENSSL_NAME.tar.gz" | sha1sum -c -; \
+	echo "$OPENSSL_SHA256 *$OPENSSL_NAME.tar.gz" | sha256sum -c -; \
 	tar xzf "$OPENSSL_NAME.tar.gz"; \
 	\
 	apt-get update; \
@@ -60,22 +60,17 @@ RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 	; \
 	\
 	cd "$OPENSSL_NAME"; \
-	./config shared --prefix=/opt/openssl; \
+	./config shared --prefix=/usr/local; \
 	make -j $(nproc) && make install; \
 	make clean; \
-	ln -s /opt/openssl/lib /opt/openssl/lib/x86_64-linux-gnu; \
 	\
 	cd /usr/src; \
 	rm -rf /usr/src/openssl*; \
 	\
-	ln -s /opt/openssl/lib/libcrypto.so.1.0.0 /usr/lib/x86_64-linux-gnu/; \
-	ln -s /opt/openssl/lib/libssl.so.1.0.0 /usr/lib/x86_64-linux-gnu/; \
-	ln -fs /opt/openssl /usr/local/ssl; \
-	ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a; \
 	cd /usr/include; \
 	ln -s x86_64-linux-gnu/curl; \
 	\
-	docker-apt-prune /opt/openssl
+	docker-apt-prune /usr/local
 
 RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 	--mount=id=stretch,type=cache,target=/var/lib/apt,sharing=shared \
@@ -83,11 +78,11 @@ RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 	\
 	BISON_NAME='bison-2.6.4'; \
 	BISON_URL="http://ftp.gnu.org/gnu/bison/$BISON_NAME.tar.xz"; \
-	BISON_SHA1='43c6a12a68710522f77e9d452407e633badebfb3'; \
+	BISON_SHA256='e0c3179ed1a622d7ab9679d64b556a7722f9eb7fa32d568ce8f329f89cca52e9'; \
 	\
 	cd /usr/src; \
 	curl -O "$BISON_URL"; \
-	echo "$BISON_SHA1 *$BISON_NAME.tar.xz" | sha1sum -c -; \
+	echo "$BISON_SHA256 *$BISON_NAME.tar.xz" | sha256sum -c -; \
 	tar -Jxf "$BISON_NAME.tar.xz"; \
 	\
 	apt-get update; \
@@ -102,6 +97,36 @@ RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 	\
 	cd /usr/src; \
 	rm -rf /usr/src/bison*; \
+	\
+	docker-apt-prune /usr/local
+
+RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
+	--mount=id=stretch,type=cache,target=/var/lib/apt,sharing=shared \
+	set -eux; \
+	\
+	GNUICONV_NAME="libiconv-1.15"; \
+	GNUICONV_URL="http://ftp.gnu.org/pub/gnu/libiconv/$GNUICONV_NAME.tar.gz"; \
+	GNUICONV_SHA256="ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178"; \
+	\
+	mkdir -p /usr/src; \
+	cd /usr/src; \
+	curl -O "$GNUICONV_URL"; \
+	echo "$GNUICONV_SHA256 *$GNUICONV_NAME.tar.gz" | sha256sum -c -; \
+	tar xzf "$GNUICONV_NAME.tar.gz"; \
+	\
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		$PHPIZE_DEPS \
+	; \
+	\
+	cd "$GNUICONV_NAME"; \
+	./configure --prefix=/usr/local; \
+	make -j $(nproc) && make install; \
+	make clean; \
+	ln -s /usr/local/lib/libiconv.so* /usr/lib/; \
+	\
+	cd /usr/src; \
+	rm -rf /usr/src/libiconv*; \
 	\
 	docker-apt-prune /usr/local
 
@@ -123,13 +148,16 @@ ENV PHP_VERSION 5.3.29
 ENV PHP_URL="https://www.php.net/distributions/php-5.3.29.tar.xz"
 ENV PHP_SHA256="8438c2f14ab8f3d6cd2495aa37de7b559e33b610f9ab264f0c61b531bf0c262d"
 
+RUN set -eux; \
+	\
+	mkdir -p /usr/src; \
+	cd /usr/src; \
+	curl -o php.tar.xz "$PHP_URL"; \
+	echo "$PHP_SHA256 *php.tar.xz" | sha256sum -c -
+
 RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 	--mount=id=stretch,type=cache,target=/var/lib/apt,sharing=shared \
 	set -eux; \
-	\
-	cd /usr/src; \
-	curl -o php.tar.xz "$PHP_URL"; \
-	echo "$PHP_SHA256 *php.tar.xz" | sha256sum -c -; \
 	\
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
@@ -151,10 +179,14 @@ RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 	docker-php-source extract; \
 	\
 	cd /usr/src/php; \
+	sed -i '48248,48261d' configure; \
+	cd /usr/src/php/ext/iconv; \
+	sed -i '41,47d' config.m4; \
+	\
+	cd /usr/src/php; \
 	./configure \
 		--with-config-file-path="$PHP_INI_DIR" \
 		--with-config-file-scan-dir="$PHP_INI_DIR/conf.d" \
-		--with-libdir=/lib/x86_64-linux-gnu \
 		--disable-cgi \
 		--enable-fpm \
 		--with-fpm-user=www-data \
@@ -165,11 +197,11 @@ RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 		--enable-mbstring \
 		--enable-mysqlnd \
 		--with-curl \
-		--with-iconv \
+		--with-iconv=/usr/local \
 		--with-libxml-dir=/usr \
 		--with-mhash \
 		--with-onig \
-		--with-openssl=/opt/openssl \
+		--with-openssl=/usr/local \
 		--with-pear \
 		--with-pic \
 		--with-readline \
@@ -239,7 +271,10 @@ RUN set -eux; \
 	{ \
 		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
 		echo 'fastcgi.logging = Off'; \
-	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"
+	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"; \
+	\
+	cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
+	sed -i 's#^;date\.timezone.*$#date.timezone = "UTC"#' "$PHP_INI_DIR/php.ini"
 
 # Override stop signal to stop process gracefully
 # https://github.com/php/php-src/blob/17baa87faddc2550def3ae7314236826bc1b1398/sapi/fpm/php-fpm.8.in#L163
@@ -308,10 +343,7 @@ RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 		zip \
 	; \
 	\
-	docker-apt-prune /usr/local; \
-	\
-	cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
-	sed -i 's#^;date\.timezone.*$#date.timezone = "Asia/Shanghai"#' "$PHP_INI_DIR/php.ini"
+	docker-apt-prune /usr/local
 
 RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 	--mount=id=stretch,type=cache,target=/var/lib/apt,sharing=shared \
@@ -343,6 +375,10 @@ RUN --mount=id=stretch,type=cache,target=/var/cache/apt,sharing=shared \
 	docker-apt-prune /usr/local
 
 RUN set -eux; \
-	curl -o /usr/bin/composer https://getcomposer.org/download/latest-2.2.x/composer.phar; \
+	\
+	FILE_SHA256='5211584ad39af26704da9f6209bc5d8104a2d576e80ce9c7ed8368ddd779d0af'; \
+	curl -o /usr/bin/composer https://getcomposer.org/download/2.2.21/composer.phar; \
+	echo "$FILE_SHA256 */usr/bin/composer" | sha256sum -c -; \
 	chmod u+x /usr/bin/composer; \
+	\
 	composer --version

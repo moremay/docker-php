@@ -4,6 +4,9 @@ FROM php:8.2-fpm-alpine
 
 COPY docker-apk-* /usr/local/bin/
 
+RUN	cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
+	sed -i 's#^;date\.timezone.*$#date.timezone = "UTC"#' "$PHP_INI_DIR/php.ini"
+
 RUN set -eux; \
 	apk add --no-cache --virtual .phpize-deps \
 		$PHPIZE_DEPS \
@@ -15,7 +18,6 @@ RUN set -eux; \
 		libavif-dev \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
-		libpng \
 		libpng-dev \
 		libwebp-dev \
 		libxpm-dev \
@@ -23,7 +25,6 @@ RUN set -eux; \
 		libzip-dev \
 		linux-headers \
 	; \
-	update-ca-certificates; \
 	\
 	docker-php-source extract; \
 	\
@@ -51,11 +52,7 @@ RUN set -eux; \
 		zip \
 	; \
 	\
-	docker-apk-prune; \
-	\
-	cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
-	sed -i 's#^;date\.timezone.*$#date.timezone = "Asia/Shanghai"#' "$PHP_INI_DIR/php.ini"
-
+	docker-apk-prune;
 RUN set -eux; \
 	apk add --no-cache --virtual .phpize-deps \
 		$PHPIZE_DEPS \
@@ -79,6 +76,10 @@ RUN set -eux; \
 	docker-apk-prune
 
 RUN set -eux; \
-	wget -O /usr/bin/composer https://getcomposer.org/download/latest-stable/composer.phar; \
+	\
+	FILE_SHA256='9256c4c1c803b9d0cb7a66a1ab6c737e48c43cc6df7b8ec9ec2497a724bf44de'; \
+	curl -o /usr/bin/composer https://getcomposer.org/download/latest-stable/composer.phar; \
+	echo "$FILE_SHA256 */usr/bin/composer" | sha256sum -c -; \
 	chmod u+x /usr/bin/composer; \
+	\
 	composer --version

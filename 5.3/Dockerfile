@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM alpine:3.7.3
+FROM alpine:3.10.9
 
 COPY docker-* /usr/local/bin/
 
@@ -15,7 +15,7 @@ ENV PHPIZE_DEPS \
 		pkgconf \
 		re2c
 
-RUN apk add --no-cache \
+RUN apk add --update --no-cache \
 		ca-certificates \
 		curl \
 		tar \
@@ -31,12 +31,12 @@ RUN set -eux; \
 	\
 	OPENSSL_NAME='openssl-1.0.2u'; \
 	OPENSSL_URL="https://www.openssl.org/source/old/1.0.2/$OPENSSL_NAME.tar.gz"; \
-	OPENSSL_SHA1='740916d79ab0d209d2775277b1c6c3ec2f6502b2'; \
+	OPENSSL_SHA256='ecd0c6ffb493dd06707d38b14bb4d8c2288bb7033735606569d8f90f89669d16'; \
 	\
 	mkdir -p /usr/src; \
 	cd /usr/src; \
 	curl -kO "$OPENSSL_URL"; \
-	echo "$OPENSSL_SHA1 *$OPENSSL_NAME.tar.gz" | sha1sum -c -; \
+	echo "$OPENSSL_SHA256 *$OPENSSL_NAME.tar.gz" | sha256sum -c -; \
 	tar xzf "$OPENSSL_NAME.tar.gz"; \
 	\
 	apk add --no-cache --virtual .phpize-deps \
@@ -55,12 +55,13 @@ RUN set -eux; \
 
 RUN set -eux; \
 	\
-	GNUICONV_NAME="libiconv-1.17"; \
+	GNUICONV_NAME="libiconv-1.15"; \
 	GNUICONV_URL="http://ftp.gnu.org/pub/gnu/libiconv/$GNUICONV_NAME.tar.gz"; \
-	GNUICONV_SHA256="8f74213b56238c85a50a5329f77e06198771e70dd9a739779f4c02f65d971313"; \
+	GNUICONV_SHA256="ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178"; \
 	\
+	mkdir -p /usr/src; \
 	cd /usr/src; \
-	curl -O "$GNUICONV_URL"; \
+	curl -kO "$GNUICONV_URL"; \
 	echo "$GNUICONV_SHA256 *$GNUICONV_NAME.tar.gz" | sha256sum -c -; \
 	tar xzf "$GNUICONV_NAME.tar.gz"; \
 	\
@@ -76,7 +77,6 @@ RUN set -eux; \
 	\
 	cd /usr/src; \
 	rm -rf /usr/src/libiconv*; \
-	rm -vf /usr/include/iconv.h; \
 	\
 	docker-apk-prune /usr/local
 
@@ -101,7 +101,7 @@ RUN set -eux; \
 	mkdir -p /usr/src; \
 	cd /usr/src; \
 	\
-	curl -fsSL -o php.tar.xz "$PHP_URL"; \
+	curl -ko php.tar.xz "$PHP_URL"; \
 	\
 	if [ -n "$PHP_SHA256" ]; then \
 		echo "$PHP_SHA256 *php.tar.xz" | sha256sum -c -; \
@@ -112,7 +112,6 @@ RUN set -eux; \
 		$PHPIZE_DEPS \
 		coreutils \
 		curl-dev \
-		libsodium-dev \
 		libxml2-dev \
 		linux-headers \
 		oniguruma-dev \
@@ -215,7 +214,10 @@ RUN set -eux; \
 	{ \
 		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
 		echo 'fastcgi.logging = Off'; \
-	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"
+	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"; \
+	\
+	cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
+	sed -i 's#^;date\.timezone.*$#date.timezone = "UTC"#' "$PHP_INI_DIR/php.ini"
 
 # Override stop signal to stop process gracefully
 # https://github.com/php/php-src/blob/17baa87faddc2550def3ae7314236826bc1b1398/sapi/fpm/php-fpm.8.in#L163
@@ -239,7 +241,6 @@ RUN set -eux; \
 		libxpm-dev \
 		libxslt-dev \
 	; \
-	update-ca-certificates; \
 	\
 	docker-php-source extract; \
 	\
@@ -286,10 +287,7 @@ RUN set -eux; \
 		zip \
 	; \
 	\
-	docker-apk-prune; \
-	\
-	cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
-	sed -i 's#^;date\.timezone.*$#date.timezone = "Asia/Shanghai"#' "$PHP_INI_DIR/php.ini"
+	docker-apk-prune
 
 RUN set -eux; \
 	apk add --no-cache --virtual .phpize-deps \
@@ -318,6 +316,10 @@ RUN set -eux; \
 	docker-apk-prune
 
 RUN set -eux; \
-	curl -o /usr/bin/composer https://getcomposer.org/download/latest-2.2.x/composer.phar; \
+	\
+	FILE_SHA256='5211584ad39af26704da9f6209bc5d8104a2d576e80ce9c7ed8368ddd779d0af'; \
+	curl -o /usr/bin/composer https://getcomposer.org/download/2.2.21/composer.phar; \
+	echo "$FILE_SHA256 */usr/bin/composer" | sha256sum -c -; \
 	chmod u+x /usr/bin/composer; \
+	\
 	composer --version

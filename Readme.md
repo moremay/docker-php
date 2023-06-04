@@ -6,6 +6,17 @@ Thank [docker-library/php](https://github.com/docker-library/php)
 
 Build images for php-fpm.
 
++ ext. :
+  + add shared :
+  bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, redis, sockets, sodium, timezonedb, xsl, zip
+  + iconv &nbsp;&nbsp;&nbsp;&nbsp; php 5: gnu libiconv 1.15; php 7, 8: gnu libiconv 1.17
+  + mcrypt &nbsp;&nbsp; php 5. php 7, 8: Alternatives: Sodium/OpenSSL
+  + mysql &nbsp;&nbsp;&nbsp;&nbsp; php 5. php 7, 8: Alternatives: mysqli
+  + openssl &nbsp; php 5: openssl 1.0.2u; php 7.4: openssl 1.1.1u; php 8.2: openssl 3.1.0
+  + sodium &nbsp;&nbsp; php 7, 8
++ composer
+  php 5: 2.2.21; php 7.4, 8.2: 2.5.7
+
 ## PHPCompatibility
 
 [PHPCompatibility ![PHPCompatibility Current Version](https://poser.pugx.org/phpcompatibility/php-compatibility/v)](https://github.com/PHPCompatibility/PHPCompatibility)
@@ -52,7 +63,7 @@ Build images for php-fpm.
 |<span id="libxml">libxml</span> [<sup>[3]</sup>](#n_3)|libxml2-dev|--with-libxml-dir=DIR|
 |mbstring [<sup>[1]</sup>](#n_1)|*libmbfl [<sup>[5]</sup>](#n_5)*|--enable-mbstring<BR />**<7.3** 可指定 libmbfl: --with-libmbfl[=DIR]|
 ||多字节 oniguruma-dev *-or-* libonig-dev|**<7.4** 可指定 onig: --with-onig[=DIR]|
-|mcrypt|libmcrypt-dev *libltdl-dev*|**>=7.2** 移至 PECL 库|
+|mcrypt|libmcrypt-dev *libltdl-dev*|**>=7.2** 移至 PECL 库。使用 Sodium/OpenSSL|
 |mysql|see myqli|**5.5 废弃, 7.0 移除**<BR />--with-mysql[=DIR]|
 |mysqli [<sup>[6]</sup>](#n_6)|[mysqlnd](#mysqlnd) -*or*- libmysqlclient-dev -*or*- libmariadbclient-dev-compat|--with-mysqli[=DIR]<BR />*对于 mysqlnd，5.3必须使用=mysqlnd，高版本是默认值。*|
 |<span id="mysqlnd">mysqlnd</span> [<sup>[1]</sup>](#n_1)|**>=5.3** 开始支持|--enable-mysqlnd|
@@ -82,6 +93,7 @@ Build images for php-fpm.
 |snmp|Net-SNMP||
 |soap|[libxml](#libxml)|--enable-soap|
 |sockets||--enable-sockets|
+|sodium|libsodium|**>=7.2**|
 |sqlite3|libsqlite||
 |sysvmsg [<sup>[2]</sup>](#n_2)||--enable-sysvmsg|
 |sysvsem [<sup>[2]</sup>](#n_2)||--enable-sysvsem|

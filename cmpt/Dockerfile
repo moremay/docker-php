@@ -3,8 +3,12 @@
 FROM php:7.4.33-cli-alpine
 
 RUN set -eux; \
-	wget -O /usr/bin/composer https://getcomposer.org/download/latest-stable/composer.phar; \
+	\
+	FILE_SHA256='9256c4c1c803b9d0cb7a66a1ab6c737e48c43cc6df7b8ec9ec2497a724bf44de'; \
+	curl -o /usr/bin/composer https://getcomposer.org/download/latest-stable/composer.phar; \
+	echo "$FILE_SHA256 */usr/bin/composer" | sha256sum -c -; \
 	chmod u+x /usr/bin/composer; \
+	\
 	composer --version
 
 ENV COMPOSER_ALLOW_SUPERUSER 1
