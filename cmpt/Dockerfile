@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 FROM php:7.4.33-cli-alpine
 
 RUN set -eux; \

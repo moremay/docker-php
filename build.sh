@@ -22,7 +22,7 @@ user=$(docker info | grep 'Username' | awk '{print $2}')
 
 docker build . -t temp "$@"
 
-docker run --rm -v ./:/tmp/host temp /bin/sh -c "[ -f \$PHP_INI_DIR/php.ini ] && cp -uv \$PHP_INI_DIR/php.ini /tmp/host/php.ini"
+docker run --rm -v "$(pwd)":/tmp/host temp /bin/sh -c '[ -f $PHP_INI_DIR/php.ini ] && cp -uv $PHP_INI_DIR/php.ini /tmp/host/php.ini || echo ""'
 
 tags=($ver)
 if [ -x "tags.sh" ]; then
