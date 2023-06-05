@@ -21,9 +21,10 @@ Build images for php-fpm.
 
 [PHPCompatibility ![PHPCompatibility Current Version](https://poser.pugx.org/phpcompatibility/php-compatibility/v)](https://github.com/PHPCompatibility/PHPCompatibility)
 
-    wget https://raw.githubusercontent.com/moremay/docker-php/master/phpcs
+    curl -O https://raw.githubusercontent.com/moremay/docker-php/master/phpcs
     chmod u+x phpcs
-    ./phpcs [-p .]|<-p path/to/html> [--standard PHPCompatibility[,...]] [--version ver_min[-[ver_max]]]
+    ./phpcs --usage
+    ./phpcs [--volume list] [-p .]|<-p path/to/php/files> [--standard PHPCompatibility[,...]] [--version ver_min[-[ver_max]]] [PHP CodeSniffer options]
 
 [PHP CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) installed coding standards
 

@@ -7,19 +7,74 @@ standard=PHPCompatibility
 
 params=()
 
+volumes=()
+
+usage() {
+    echo "Usage: "
+    echo "$0"' [--volume list] [-p .]|<-p path/to/php/files> [--standard PHPCompatibility[,...]] [--version ver_min[-[ver_max]]] [PHP CodeSniffer options]'
+    echo "$0 --usage"
+    cat <<EOF
+
+docker options:
+    --volume list       Bind mount a volume
+
+phpcs options:
+    -p path             => docker: -v path:/www; phpcs -p /www
+    --standard names    => phpcs --standard=names
+    --version vers      => phpcs --runtime-set testVersion "vers"
+    -h|--help           => phpcs --help
+
+--usage                 Print this message
+
+EOF
+}
+
 while [ $# -gt 0 ]; do
     case $1 in
     -p)
         shift
-        [ -z "$1" ] || p="$1"
+        [ -n "$1" ] || {
+            echo -e "\n\033[31;1mError\033[0m: -p miss path\n"
+            usage
+            exit 1
+        } >&2
+        [ -d "$1" ] || {
+            echo -e "\n\033[31;1mError\033[0m: directory '$1' not exists.\n"
+            usage
+            exit 1
+        } >&2
+        p="$1"
         ;;
     --standard)
         shift
-        [ -z "$1" ] || standard="$1"
+        [ -n "$1" ] || {
+            echo -e "\n\033[31;1mError\033[0m: --standard miss coding standards\n"
+            usage
+            exit 1
+        } >&2
+        standard="$1"
+        ;;
+    --usage)
+        usage
+        exit 1
         ;;
     --version)
         shift
-        [ -z "$1" ] || params=("${params[@]}" --runtime-set testVersion "$1")
+        [ -n "$1" ] || {
+            echo -e "\n\033[31;1mError\033[0m: --version miss versions\n"
+            usage
+            exit 1
+        } >&2
+        params=("${params[@]}" --runtime-set testVersion "$1")
+        ;;
+    --volume)
+        shift
+        [ -n "$1" ] || {
+            echo -e "\n\033[31;1mError\033[0m: --volume miss params\n"
+            usage
+            exit 1
+        } >&2
+        volumes=("${volumes[@]}" -v "$1")
         ;;
     *)
         params=("${params[@]}" "$1")
@@ -28,4 +83,5 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-docker run --rm -it -v "$p"/:/var/www/html moremay/php:cmpt phpcs -p /var/www/html --extensions=php --standard="$standard" "${params[@]}"
+set -x
+docker run --rm -it -v "$p"/:/www "${volumes[@]}" moremay/php:cmpt phpcs -p /www --extensions=php --standard="$standard" "${params[@]}"
