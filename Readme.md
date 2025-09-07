@@ -54,7 +54,7 @@ chmod u+x phpcs
 |bcmatch||--enable-bcmath|
 |bz2|bzip2-dev -*or*- libbz2-dev|--with-bz2|
 |calendar||--enable-calendar|
-|curl [^[1]^](#n_1) [^[4]^](#n_4)|curl *libcurl3-gnutls [^[5]^](#n_5)*<BR />curl-dev -*or*- libcurl4-openssl-dev|--with-curl[=DIR]|
+|curl [[1]](#n_1) [[4]](#n_4)|curl *libcurl3-gnutls [[5]](#n_5)*<BR />curl-dev -*or*- libcurl4-openssl-dev|--with-curl[=DIR]|
 |dba|[detail](https://www.php.net/manual/en/dba.requirements.php)|[detail](https://www.php.net/manual/zh/dba.installation.php)|
 |dom|[libxml](#libxml)||
 |enchant|*Enchant + Glib*|--with-enchant[=dir]|
@@ -62,7 +62,7 @@ chmod u+x phpcs
 |exif||--enable-exif|
 ||**after** mbstring|php_mbstring.dll<BR />...<BR />php_exif.dll|
 |fileinfo||php_fileinfo.dll|
-|ftp [^[1]^](#n_1)||--enable-ftp|
+|ftp [[1]](#n_1)||--enable-ftp|
 |gd| |--with-gd[=DIR]|
 |gd:avif|libavif-dev|**>=8.1**--with-avif[=DIR]|
 |gd:freetype|freetype-dev *-or-* libfreetype-dev|**<7.4** --with-freetype-dir[=DIR]<BR />**>=7.4** --with-freetype[=DIR]<BR />---<BR />**<7.2** *string function* [--enable-gd-native-ttf]<BR />*Type 1 fonts* [--with-t1lib[=DIR]]<BR />---<BR />~~JIS-mapped Japanese font~~ [--enable-gd-jis-conv]|
@@ -72,22 +72,22 @@ chmod u+x phpcs
 |gd:xpm|libxpm-dev|**<7.4** --with-xpm-dir[=DIR]<BR />**>=7.4** --with-xpm[=DIR]|
 |gettext|gettext-dev*|--with-gettext[=DIR]|
 |gmp|gmp-dev -*or*- libgmp-dev|--with-gmp|
-|iconv [^[3]^](#n_3)|*gnu-libiconv-dev [^[5]^](#n_5)*|--with-iconv=DIR|
-|imap [^[4]^](#n_4)|[detail](https://www.php.net/manual/zh/imap.requirements.php)|--with-imap[=DIR] [--with-imap-ssl[=DIR] \| --with-kerberos[=DIR]]|
+|iconv [[3]](#n_3)|*gnu-libiconv-dev [[5]](#n_5)*|--with-iconv=DIR|
+|imap [[4]](#n_4)|[detail](https://www.php.net/manual/zh/imap.requirements.php)|--with-imap[=DIR] [--with-imap-ssl[=DIR] \| --with-kerberos[=DIR]]|
 |intl|icu-dev|--enable-intl|
-|ldap [^[4]^](#n_4)|*OpenLDAP*|--with-ldap[=DIR] [--with-ldap-sasl[=DIR]]|
-|<a id="libxml">libxml</a> [^[3]^](#n_3)|libxml2-dev|--with-libxml-dir=DIR|
-|mbstring [^[1]^](#n_1)|*libmbfl [^[5]^](#n_5)*|--enable-mbstring<BR />**<7.3** 可指定 libmbfl: --with-libmbfl[=DIR]|
+|ldap [[4]](#n_4)|*OpenLDAP*|--with-ldap[=DIR] [--with-ldap-sasl[=DIR]]|
+|<a id="libxml">libxml</a> [[3]](#n_3)|libxml2-dev|--with-libxml-dir=DIR|
+|mbstring [[1]](#n_1)|*libmbfl [[5]](#n_5)*|--enable-mbstring<BR />**<7.3** 可指定 libmbfl: --with-libmbfl[=DIR]|
 ||多字节 oniguruma-dev *-or-* libonig-dev|**<7.4** 可指定 onig: --with-onig[=DIR]|
 |mcrypt|libmcrypt-dev *libltdl-dev*|**>=7.2** 移至 PECL 库。使用 Sodium/OpenSSL|
 |mysql|see myqli|**5.5 废弃, 7.0 移除**<BR />--with-mysql[=DIR]|
-|mysqli [^[6]^](#n_6)|[mysqlnd](#mysqlnd) -*or*- libmysqlclient-dev -*or*- libmariadbclient-dev-compat|--with-mysqli[=DIR]<BR />*对于 mysqlnd，5.3必须使用=mysqlnd，高版本是默认值。*|
-|<a id="mysqlnd">mysqlnd</a> [^[1]^](#n_1)|**>=5.3** 开始支持|--enable-mysqlnd|
+|mysqli [[6]](#n_6)|[mysqlnd](#mysqlnd) -*or*- libmysqlclient-dev -*or*- libmariadbclient-dev-compat|--with-mysqli[=DIR]<BR />*对于 mysqlnd，5.3必须使用=mysqlnd，高版本是默认值。*|
+|<a id="mysqlnd">mysqlnd</a> [[1]](#n_1)|**>=5.3** 开始支持|--enable-mysqlnd|
 |oci8|[detail](https://www.php.net/manual/zh/oci8.requirements.php) [oracle](https://www.oracle.com/database/technologies/instant-client.html)|[detail](https://www.php.net/manual/zh/oci8.installation.php)|
 |odbc||[detail](https://www.php.net/manual/zh/odbc.installation.php)|
-|openssl [^[1]^](#n_1)|openssl-dev|--with-openssl[=DIR]<BR />**5.3** <1.1<BR />**7.0** >=0.9.8<BR />**7.1~8.0** [1.0.1, 3.0)<BR />**8.1** [1.0.2, 4.0)|
-|pcntl [^[2]^](#n_2) [^[7]^](#n_7)||--enable-pcntl|
-|pcre [^[3]^](#n_3)||--with-pcre-regex=DIR<BR />**>=7.0.12** [--without-pcre-jit]|
+|openssl [[1]](#n_1)|openssl-dev|--with-openssl[=DIR]<BR />**5.3** <1.1<BR />**7.0** >=0.9.8<BR />**7.1~8.0** [1.0.1, 3.0)<BR />**8.1** [1.0.2, 4.0)|
+|pcntl [[2]](#n_2) [[7]](#n_7)||--enable-pcntl|
+|pcre [[3]](#n_3)||--with-pcre-regex=DIR<BR />**>=7.0.12** [--without-pcre-jit]|
 |pdo||php_pdo.dll*必须先于具体数据库加载。*|
 |pdo_dblib|MSSQL & Sybase|移至 PECL 库|
 |pdo_firebird|Firebird / InterBase|--with-pdo-firebird[=DIR]<BR />**7.4** 移至 PECL 库|
@@ -95,25 +95,25 @@ chmod u+x phpcs
 |pdo_oci|[detail](https://www.php.net/manual/zh/oci8.requirements.php) Oracle|--with-pdo-oci=instantclient,prefix,version \|<BR />--with-pdo-oci[=DIR] *default: $ORACLE_HOME*<BR />PECL 也包含。|
 |pdo_odbc|[detail](https://www.php.net/manual/zh/ref.pdo-odbc.php)||
 |pdo_pgsql|PostgreSQL|--with-pdo-pgsql[=DIR]|
-|pdo_sqlite [^[3]^](#n_3)|libsqlite|--with-pdo-sqlite=DIR|
+|pdo_sqlite [[3]](#n_3)|libsqlite|--with-pdo-sqlite=DIR|
 |pgsql|PostgreSQL|--with-pgsql[=DIR]|
 |phar|zlib bzip2 openssl||
 |posix||不支持 Windows|
 |pspell|aspell|--with-pspell[=dir]|
 ||aspell-15.dll|aspell >= 0.5|
-|readline [^[1]^](#n_1) [^[8]^](#n_8)|readline-dev *-or-* libreadline-dev|--with-readline[=DIR]|
+|readline [[1]](#n_1) [[8]](#n_8)|readline-dev *-or-* libreadline-dev|--with-readline[=DIR]|
 ||libedit-dev|--with-libedit[=DIR]|
 |recode|[detail](https://github.com/rrthomas/recode/)|--with-recode[=DIR]<BR />**7.4** 移至 PECL 库|
-|shmop [^[2]^](#n_2)||--enable-shmop|
+|shmop [[2]](#n_2)||--enable-shmop|
 |simplexml|[libxml](#libxml)||
 |snmp|Net-SNMP||
 |soap|[libxml](#libxml)|--enable-soap|
 |sockets||--enable-sockets|
 |sodium|libsodium|**>=7.2**|
 |sqlite3|libsqlite||
-|sysvmsg [^[2]^](#n_2)||--enable-sysvmsg|
-|sysvsem [^[2]^](#n_2)||--enable-sysvsem|
-|sysvshm [^[2]^](#n_2)||--enable-sysvshm|
+|sysvmsg [[2]](#n_2)||--enable-sysvmsg|
+|sysvsem [[2]](#n_2)||--enable-sysvsem|
+|sysvshm [[2]](#n_2)||--enable-sysvshm|
 |tidy|tidyhtml-dev *-or-* libtidy-dev *-or-* libtidy5-dev *-or-* libtidyp-dev|--with-tidy|
 |wddx|[libxml](#libxml) expat|--enable-wddx [--with-libexpat-dir]<BR />**7.4** 移至 PECL 库|
 |xml|[libxml](#libxml)||
@@ -122,7 +122,7 @@ chmod u+x phpcs
 |xmlwriter|[libxml](#libxml)||
 |xsl|[libxml](#libxml) libxslt-dev *libxslt1-dev*|--with-xsl[=DIR]|
 |zip|libzip|**<7.4** --enable-zip<BR />**7.4** --with-zip [--with-libzip=DIR]<BR />所有版本可用 PECL|
-|zlib [^[1]^](#n_1)|zlib-dev *-or-* zlib*1g*-dev|--with-zlib[=DIR]|
+|zlib [[1]](#n_1)|zlib-dev *-or-* zlib*1g*-dev|--with-zlib[=DIR]|
 
 1. <a id="n_1"> </a>需要/推荐与 PHP 一起编译。
 2. <a id="n_2"> </a>一般不推荐用于 Web。
