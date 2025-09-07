@@ -1,21 +1,20 @@
-# syntax=docker/dockerfile:1
+ARG composer=
+ARG mirrors=
 
 FROM alpine:3.16
 
+ARG composer
+ARG mirrors
+
 COPY docker-* /usr/local/bin/
 
-ENV PHPIZE_DEPS \
-		autoconf \
-		dpkg-dev dpkg \
-		file \
-		g++ \
-		gcc \
-		libc-dev \
-		make \
-		pkgconf \
-		re2c
+ENV PHPIZE_DEPS="autoconf dpkg-dev dpkg file g++ gcc libc-dev make pkgconf re2c"
 
-RUN apk add --no-cache \
+RUN if [ -n "${mirrors}" ]; then \
+		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
+	fi
+
+RUN	apk add --no-cache \
 		ca-certificates \
 		curl \
 		tar \
@@ -28,14 +27,15 @@ RUN set -eux; \
 
 RUN set -eux; \
 	\
-	OPENSSL_NAME='openssl-1.1.1u'; \
-	OPENSSL_URL="https://www.openssl.org/source/$OPENSSL_NAME.tar.gz"; \
-	OPENSSL_SHA256='e2f8d84b523eecd06c7be7626830370300fbcc15386bf5142d72758f6963ebc6'; \
+	OPENSSL_NAME='openssl-1.1.1w'; \
+	OPENSSL_URL="https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/$OPENSSL_NAME.tar.gz"; \
+	OPENSSL_SHA256='cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8'; \
 	\
 	mkdir -p /usr/src; \
 	cd /usr/src; \
-	curl -kO "$OPENSSL_URL"; \
-	echo "$OPENSSL_SHA256 *$OPENSSL_NAME.tar.gz" | sha256sum -c -; \
+	curl -LkO "$OPENSSL_URL"; \
+	ls -l; \
+	echo "$OPENSSL_SHA256 *$OPENSSL_NAME.tar.gz" | sha256sum -bc -; \
 	tar xzf "$OPENSSL_NAME.tar.gz"; \
 	\
 	apk add --no-cache --virtual .phpize-deps \
@@ -54,13 +54,14 @@ RUN set -eux; \
 
 RUN set -eux; \
 	\
-	GNUICONV_NAME="libiconv-1.17"; \
-	GNUICONV_URL="http://ftp.gnu.org/pub/gnu/libiconv/$GNUICONV_NAME.tar.gz"; \
-	GNUICONV_SHA256="8f74213b56238c85a50a5329f77e06198771e70dd9a739779f4c02f65d971313"; \
+	GNUICONV_NAME="libiconv-1.18"; \
+	GNUICONV_URL="https://mirrors.aliyun.com/gnu/libiconv/$GNUICONV_NAME.tar.gz"; \
+	#GNUICONV_URL="http://ftp.gnu.org/pub/gnu/libiconv/$GNUICONV_NAME.tar.gz"; \
+	GNUICONV_SHA256="3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8"; \
 	\
 	mkdir -p /usr/src; \
 	cd /usr/src; \
-	curl -kO "$GNUICONV_URL"; \
+	curl -LkO "$GNUICONV_URL"; \
 	echo "$GNUICONV_SHA256 *$GNUICONV_NAME.tar.gz" | sha256sum -c -; \
 	tar xzf "$GNUICONV_NAME.tar.gz"; \
 	\
@@ -80,7 +81,7 @@ RUN set -eux; \
 	\
 	docker-apk-prune /usr/local
 
-ENV PHP_INI_DIR /usr/local/etc/php
+ENV PHP_INI_DIR=/usr/local/etc/php
 RUN set -eux; \
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
 	[ ! -d /var/www/html ]; \
@@ -92,7 +93,7 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
-ENV PHP_VERSION 7.4.33
+ENV PHP_VERSION=7.4.33
 ENV PHP_URL="https://www.php.net/distributions/php-7.4.33.tar.xz"
 ENV PHP_SHA256="924846abf93bc613815c55dd3f5809377813ac62a9ec4eb3778675b82a27b927"
 
@@ -119,6 +120,7 @@ RUN set -eux; \
 		oniguruma-dev \
 		readline-dev \
 		sqlite-dev \
+		unixodbc-dev \
 	; \
 	\
 	export \
@@ -158,6 +160,7 @@ RUN set -eux; \
 		\
 		--with-pdo-sqlite=/usr \
 		--with-sqlite3=/usr \
+		--with-pdo-odbc=unixODBC,/usr \
 	; \
 	make -j $(nproc); \
 	find -type f -name '*.a' -delete; \
@@ -212,6 +215,9 @@ RUN set -eux; \
 		echo; \
 		echo '; Ensure worker stdout and stderr are sent to the main error log.'; \
 		echo 'catch_workers_output = yes'; \
+		echo; \
+		echo "[date]"; \
+		echo 'date.timezone = "Asia/Shanghai"'; \
 	} | tee php-fpm.d/docker.conf; \
 	{ \
 		echo '[global]'; \
@@ -227,7 +233,7 @@ RUN set -eux; \
 	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"; \
 	\
 	cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
-	sed -i 's#^;date\.timezone.*$#date.timezone = "UTC"#' "$PHP_INI_DIR/php.ini"
+	sed -i 's#^;date\.timezone.*$#date.timezone = "Asia/Shanghai"#' "$PHP_INI_DIR/php.ini"
 
 # Override stop signal to stop process gracefully
 # https://github.com/php/php-src/blob/17baa87faddc2550def3ae7314236826bc1b1398/sapi/fpm/php-fpm.8.in#L163
@@ -303,10 +309,11 @@ RUN set -eux; \
 	docker-apk-prune
 
 RUN set -eux; \
-	\
+	if [ "${composer}" == "yes" ]; then \
 	FILE_SHA256="$(curl https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
 	curl -o /usr/bin/composer https://getcomposer.org/download/latest-stable/composer.phar; \
 	echo "$FILE_SHA256 */usr/bin/composer" | sha256sum -c -; \
 	chmod u+x /usr/bin/composer; \
 	\
-	composer --version
+	composer --version; \
+	fi

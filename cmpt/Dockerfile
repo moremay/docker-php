@@ -1,4 +1,4 @@
-FROM php:7.4.33-cli-alpine
+FROM php:8.4-cli-alpine
 
 RUN set -eux; \
 	\
@@ -9,7 +9,7 @@ RUN set -eux; \
 	\
 	composer --version
 
-ENV COMPOSER_ALLOW_SUPERUSER 1
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 RUN set -eux; \
 	mkdir -p /cmpt; \

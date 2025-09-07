@@ -1,14 +1,12 @@
-name: "CI: 8.2"
+name: "CI: 7.4"
 
 on:
   push:
     paths:
-      - "8.2/*"
-  schedule:
-    - cron: 0 0 * * 6
+      - "7.4/*"
 
 jobs:
-  build_82:
+  build_74:
     runs-on: ubuntu-latest
     steps:
     - name: Build the Docker image
@@ -23,9 +21,14 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v4
       with:
-        context: ./8.2
-        file: ./8.2/Dockerfile
+        context: ./7.4
+        file: ./7.4/Dockerfile
         push: true
         tags: |
-          moremay/php:8.2
-          moremay/php:8.2-alpine
+          moremay/php:7.4
+          moremay/php:7.4-alpine
+
+    - name: Build composer
+      shell: bash
+      run: |
+        ./build.sh 7.4 --composer -p
