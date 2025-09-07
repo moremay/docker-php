@@ -33,7 +33,7 @@ build.sh [[-v|--ver ]ver-dir-name] [-c|--composer] [-p] [--ali]
 [PHPCompatibility ![PHPCompatibility Current Version](https://poser.pugx.org/phpcompatibility/php-compatibility/v)](https://github.com/PHPCompatibility/PHPCompatibility)
 
 ```bash
-curl -O https://raw.githubusercontent.com/moremay/docker-php/master/phpcs
+curl -O https://raw.githubusercontent.com/moremay/docker-php/refs/heads/master/phpcs
 chmod u+x phpcs
 ./phpcs --usage
 ./phpcs [--volume list] [-p .]|<-p path/to/php/files> [--standard PHPCompatibility[,...]] [--version ver_min[-[ver_max]]] [PHP CodeSniffer options]
