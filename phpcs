@@ -43,11 +43,11 @@ while [ $# -gt 0 ]; do
         usage
         exit 1
         ;;
-    -v|--version)
+    --ver|--version)
         shift
         [ -n "$1" ] && params=("${params[@]}" --runtime-set testVersion "$1")
         ;;
-    --volume)
+    -v|--volume)
         shift
         [ -n "$1" ] && volumes=("${volumes[@]}" -v "$1")
         ;;
