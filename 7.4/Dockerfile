@@ -289,18 +289,21 @@ RUN set -eux; \
 RUN set -eux; \
 	apk add --no-cache --virtual .phpize-deps \
 		$PHPIZE_DEPS \
+		libmcrypt-dev \
 	; \
 	\
 	docker-php-source extract; \
 	pecl update-channels; \
 	\
 	pecl install \
+		mcrypt \
 		redis \
 		timezonedb \
 	; \
 	chmod +x "$(php -r "echo ini_get('extension_dir');")"/*.so; \
 	\
 	docker-php-ext-enable \
+		mcrypt \
 		redis \
 		timezonedb \
 	; \

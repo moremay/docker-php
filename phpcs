@@ -59,4 +59,4 @@ while [ $# -gt 0 ]; do
 done
 
 set -x
-docker run --rm -it -v "$p"/:/www "${volumes[@]}" moremay/php-compatibility:latest phpcs -p /www --extensions=php --standard="$standard" "${params[@]}"
+docker run --rm -it -v "$p"/:/www "${volumes[@]}" moremay/php-compatibility:latest phpcs -p --standard="$standard" /www "${params[@]}"
