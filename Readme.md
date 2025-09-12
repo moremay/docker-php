@@ -9,19 +9,19 @@ Build images for php-fpm.
 + ext. :
   + add shared :
   bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, redis, sockets, sodium, timezonedb, xsl, zip
-  + iconv &nbsp;&nbsp;&nbsp;&nbsp; php 5: gnu libiconv 1.15; php 7, 8: gnu libiconv 1.18
+  + iconv &nbsp;&nbsp;&nbsp;&nbsp; gnu libiconv 1.18
   + mcrypt &nbsp;&nbsp; php 5. php 7, 8: Alternatives: Sodium/OpenSSL (pecl 1.0.9)
   + mysql &nbsp;&nbsp;&nbsp;&nbsp; php 5. php 7, 8: Alternatives: mysqli
   + odbc &nbsp;&nbsp;&nbsp;&nbsp; php 7, 8: unixODBC
   + openssl &nbsp; php 5: openssl 1.0.2u; php 7.4: openssl 1.1.1w; php 8: openssl 3.5.2
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
-  php 5: 2.2.21; php 8.2: 2.5.8; php 7.4, 8.4: Latest
+  php 5: 2.2.25; php 7.4, 8.4: Latest 2.8.11
 
 ```shell
 build.sh [[-v|--ver ]ver-dir-name] [-c|--composer] [-p] [--ali]
-  --ali           for os mirrors. eq --build-arg mirrors=mirrors.aliyun.com
-  -c, --composer  eq --build-arg composer=yes
+  --ali           for os mirrors. Set args: mirrors=mirrors.aliyun.com gnu_mirrors=https://mirrors.aliyun.com/gnu
+  -c, --composer  Set arg: composer=yes
   -p              push
   -v, --ver VER[-PLAT]  dirname.
                   If Dockerfile is in the current directory, can omit it.

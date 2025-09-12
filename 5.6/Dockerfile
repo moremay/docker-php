@@ -1,19 +1,20 @@
-# syntax=docker/dockerfile:1
+ARG composer=
+ARG mirrors=
+ARG gnu_mirrors=http://ftp.gnu.org/pub/gnu
 
 FROM alpine:3.10.9
 
+ARG composer
+ARG mirrors
+ARG gnu_mirrors
+
 COPY docker-* /usr/local/bin/
 
-ENV PHPIZE_DEPS \
-		autoconf \
-		dpkg-dev dpkg \
-		file \
-		g++ \
-		gcc \
-		libc-dev \
-		make \
-		pkgconf \
-		re2c
+ENV PHPIZE_DEPS="autoconf dpkg-dev dpkg file g++ gcc libc-dev make pkgconf re2c"
+
+RUN if [ -n "${mirrors}" ]; then \
+		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
+	fi
 
 RUN apk add --no-cache \
 		ca-certificates \
@@ -30,12 +31,12 @@ RUN set -eux; \
 RUN set -eux; \
 	\
 	OPENSSL_NAME='openssl-1.0.2u'; \
-	OPENSSL_URL="https://www.openssl.org/source/old/1.0.2/$OPENSSL_NAME.tar.gz"; \
+	OPENSSL_URL="https://github.com/openssl/openssl/releases/download/OpenSSL_1_0_2u/openssl-1.0.2u.tar.gz"; \
 	OPENSSL_SHA256='ecd0c6ffb493dd06707d38b14bb4d8c2288bb7033735606569d8f90f89669d16'; \
 	\
 	mkdir -p /usr/src; \
 	cd /usr/src; \
-	curl -kO "$OPENSSL_URL"; \
+	curl -LkO "$OPENSSL_URL"; \
 	echo "$OPENSSL_SHA256 *$OPENSSL_NAME.tar.gz" | sha256sum -c -; \
 	tar xzf "$OPENSSL_NAME.tar.gz"; \
 	\
@@ -55,9 +56,9 @@ RUN set -eux; \
 
 RUN set -eux; \
 	\
-	GNUICONV_NAME="libiconv-1.15"; \
-	GNUICONV_URL="http://ftp.gnu.org/pub/gnu/libiconv/$GNUICONV_NAME.tar.gz"; \
-	GNUICONV_SHA256="ccf536620a45458d26ba83887a983b96827001e92a13847b45e4925cc8913178"; \
+	GNUICONV_NAME="libiconv-1.18"; \
+	GNUICONV_URL="${gnu_mirrors}/libiconv/$GNUICONV_NAME.tar.gz"; \
+	GNUICONV_SHA256="3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8"; \
 	\
 	mkdir -p /usr/src; \
 	cd /usr/src; \
@@ -81,7 +82,7 @@ RUN set -eux; \
 	\
 	docker-apk-prune /usr/local
 
-ENV PHP_INI_DIR /usr/local/etc/php
+ENV PHP_INI_DIR=/usr/local/etc/php
 RUN set -eux; \
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
 	[ ! -d /var/www/html ]; \
@@ -93,7 +94,7 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
-ENV PHP_VERSION 5.6.40
+ENV PHP_VERSION=5.6.40
 ENV PHP_URL="https://www.php.net/distributions/php-5.6.40.tar.xz"
 ENV PHP_SHA256="1369a51eee3995d7fbd1c5342e5cc917760e276d561595b6052b21ace2656d1c"
 
@@ -304,10 +305,11 @@ RUN set -eux; \
 	docker-apk-prune
 
 RUN set -eux; \
-	\
-	FILE_SHA256='5211584ad39af26704da9f6209bc5d8104a2d576e80ce9c7ed8368ddd779d0af'; \
-	curl -o /usr/bin/composer https://getcomposer.org/download/2.2.21/composer.phar; \
-	echo "$FILE_SHA256 */usr/bin/composer" | sha256sum -c -; \
-	chmod u+x /usr/bin/composer; \
-	\
-	composer --version
+	if [ "${composer}" == "yes" ]; then \
+		FILE_SHA256='8b3f41253363f0645402d1951d6e7f02adedeef29c16de6074763e463e25c23f'; \
+		curl -o /usr/bin/composer https://getcomposer.org/download/2.2.25/composer.phar; \
+		echo "$FILE_SHA256 */usr/bin/composer" | sha256sum -c -; \
+		chmod u+x /usr/bin/composer; \
+		\
+		composer --version; \
+	fi

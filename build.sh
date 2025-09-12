@@ -2,7 +2,7 @@
 
 set -e
 
-if [[ -n "$1" && -d "$1" ]]; then
+if [[ -n "$1" && "${1:0,1}" != "-" ]]; then
   ver="$1"
   work="$(pwd)/$1"
   shift
@@ -16,7 +16,7 @@ params=()
 while [ $# -gt 0 ]; do
   case $1 in
   --ali)
-    params=("${params[@]}" --build-arg mirrors=mirrors.aliyun.com)
+    params=("${params[@]}" --build-arg mirrors=mirrors.aliyun.com --build-arg gnu_mirrors=https://mirrors.aliyun.com/gnu)
     ;;
   -c|--composer)
     params=("${params[@]}" --build-arg composer=yes)
@@ -40,10 +40,10 @@ if [ -z "$ver" ]; then
 fi
 
 if [ -z "$work" ]; then
-  work="$(dirname $(dirname "$(realpath "${BASH_SOURCE[0]}")"))/$ver"
+  work="$(dirname "$(realpath "${BASH_SOURCE[0]}")")/$ver"
 fi
 if [ ! -d "$work" ]; then
-  echo "NOT EXISTS: '#work'"
+  echo "NOT EXISTS: '$work'"
   exit 1
 fi
 
