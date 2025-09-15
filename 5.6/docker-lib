@@ -1,0 +1,104 @@
+#!/bin/sh
+set -ex
+
+ac=$1
+shift
+
+x_before() {
+    if [ -f /usr/src/.counter ]; then
+        counter="$(cat /usr/src/.counter)"
+        counter=$((counter + 1))
+    else
+        counter=1
+    fi
+    echo $counter > /usr/src/.counter
+    find /usr/local -type f -executable | sort > "/usr/src/$counter-before"
+}
+
+x_after() {
+    if ! [ -f /usr/src/.counter ]; then
+        return
+    fi
+    counter="$(cat /usr/src/.counter)"
+    if ! [ -f "/usr/src/$counter-before" ]; then
+        return
+    fi
+    find /usr/local -type f -executable | sort > "/usr/src/$counter-after"
+    comm -13 "/usr/src/$counter-before" "/usr/src/$counter-after" > "/usr/src/$counter-news"
+    cat "/usr/src/$counter-news" | tr '\n' '\0' | xargs -r0 strip --strip-all 2>/dev/null || :
+    rm /usr/src/$counter-*
+}
+
+apk_add () {
+    apk add --no-cache --virtual .phpize-deps $PHPIZE_DEPS $*
+    x_before
+}
+
+download() {
+    LIB_NAME="$1"
+    LIB_URL="$2"
+    LIB_SHA256="$3"
+
+    LIB_FILE="$(basename "$LIB_URL")"
+    LIB_EXT="${LIB_FILE##*.tar}"
+    LIB_FILE="$LIB_NAME.tar$LIB_EXT"
+
+    mkdir -p "/usr/src"
+    cd /usr/src
+    curl -Lko "$LIB_FILE" "$LIB_URL"
+    echo "$LIB_SHA256 *$LIB_FILE" | sha256sum -c -
+}
+
+case $ac in
+    download)
+        download "$1" "$2" "$3"
+        ;;
+    init)
+        download "$1" "$2" "$3"
+        shift 3
+
+        mkdir -p "/usr/src/$LIB_NAME"
+        cd /usr/src
+        tar -axf "$LIB_FILE" -C "/usr/src/$LIB_NAME" --strip-components=1
+
+        cd "/usr/src/$LIB_NAME"
+        touch .remove_tar_file
+        apk_add $*
+        ;;
+    php-init)
+        docker-php-source extract
+        cd /usr/src/php
+        apk_add $*
+        ;;
+    make)
+        make -j $(nproc)
+        make install
+        make clean
+        docker-lib prune
+        ;;
+    deps)
+        dir="/usr/local"
+        scanelf --needed --nobanner --format '%n#p' --recursive $dir |
+            tr ',' '\n' |
+            sort -u |
+            awk 'system("[ -e '$dir'/lib/" $1 " ]") == 0 { next } { print "so:" $1 }'
+        ;;
+    prune)
+        SRC_DIR="$(pwd)"
+        if [ -f .remove_tar_file ]; then
+            SRC_DIR="$SRC_DIR*"
+        fi
+        cd /usr/src
+        rm -rf /usr/local/share/*doc/* /usr/local/share/man/* /tmp/* $SRC_DIR
+        find /usr/local -type f -name "*.a" -delete
+
+        x_after
+
+        runDeps="$(docker-lib deps)"
+        apk add --no-cache $runDeps
+        apk del --no-network .phpize-deps
+        ;;
+    *)
+        false
+        ;;
+esac

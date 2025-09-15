@@ -18,9 +18,6 @@ while [ $# -gt 0 ]; do
   --ali)
     params=("${params[@]}" --build-arg mirrors=mirrors.aliyun.com --build-arg gnu_mirrors=https://mirrors.aliyun.com/gnu)
     ;;
-  -c|--composer)
-    params=("${params[@]}" --build-arg composer=yes)
-    ;;
   -p)
     PUSH=yes
     ;;
@@ -66,13 +63,6 @@ else
   ver="${ver/-*/}"
   [ "$plat" == "$ver" ] && plat=
 
-  composer=($(docker run --rm temp /bin/sh -c "composer --version 2>/dev/null || true" | grep ' version ' || true))
-  composer=${composer[2]}
-  if [ -n "$composer" ]; then
-    image_name="${image_name}-composer"
-    ver="$ver-$composer"
-  fi
-
   if [ "$plat" == "" ]; then
     images=("${image_name}:$ver" "${image_name}:$ver-alpine")
   else
@@ -85,11 +75,11 @@ for image in "${images[@]}"; do
   name="${user}$image"
   names=("${names[@]}" $name)
   docker tag temp $name
-  if [ -n "$PUSH" ]; then
-    docker push $name
-  fi
 done
 
 docker rmi temp
+if [ -n "$PUSH" ]; then
+  docker push ${names[0]//:*} -a
+fi
 
 echo -e "\033[36;1m>>> ${names[@]}\033[0m"
