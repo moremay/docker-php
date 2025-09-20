@@ -1,0 +1,303 @@
+#!/bin/sh
+set -e
+
+usage() {
+    echo "Usage: ./docker-lib.sh <command> [args]"
+    echo ""
+    echo "Commands:"
+    echo "    deps"
+    echo "        列出当前安装的可执行文件所需的动态库依赖。"
+    echo "        List dynamic library dependencies of currently installed executables."
+    echo ""
+    echo "    download <name> <tar-url> <sha256> [tar]"
+    echo "        下载一个压缩包并验证其 SHA256 校验和。"
+    echo "        Download a tarball and verify its SHA256 checksum."
+    echo "        ---"
+    echo "        tar   解压压缩包。extract a tarball."
+    echo ""
+    echo "    help"
+    echo "        显示此帮助信息。"
+    echo "        Show this help message."
+    echo ""
+    echo "    init <name> <tar-url> <sha256> [deps...]"
+    echo "        下载并解压压缩包，进入目录，并安装构建依赖。"
+    echo "        Download and extract a tarball, enter directory, and install build dependencies."
+    echo ""
+    echo "    make [test] [dev] [static] [no-strip]"
+    echo "        编译并安装当前目录下的项目，然后进行清理和依赖优化。"
+    echo "        Compile and install the project in current directory, then clean up and optimize dependencies."
+    echo "        ---"
+    echo "        test     Run make test."
+    echo "        [dev] [static] [no-strip] see prune."
+    echo ""
+    echo "    patch <url>..."
+    echo "        下载并应用补丁(.patch 文件)。"
+    echo "        Download and apply patches (.patch files)."
+    echo ""
+    echo "    php-init [deps...]"
+    echo "        提取 PHP 源码并安装构建依赖（用于 PHP 扩展编译）。"
+    echo "        Extract PHP source and install build dependencies (for PHP extension compilation)."
+    echo ""
+    echo "    prune [dev] [static] [no-strip]"
+    echo "        清理临时文件、文档、静态库等，并安装运行时依赖。make会自动调用。"
+    echo "        Clean up temporary files, documentation, static libraries, etc., and install runtime dependencies. Automatically called by make."
+    echo "        ---"
+    echo "        dev      保留开发包。the development package is retained."
+    echo "        static   保留链接库。the *.a is retained."
+    echo "        no-strip 保留文件的符号表。the symbols and sections is retained."
+    echo ""
+    echo "init/php-init 使用 source ./docker-lib.sh ... 在当前 shell 运行。"
+    echo "init/php-init should be run in the current shell using: source ./docker-lib.sh ..."
+    echo ""
+    echo "环境变量 Environment variable"
+    echo "   TARGET     指明安装目录，默认 '/usr/local'。"
+    echo "              specifies installation directory, defaults to '/usr/local'."
+    echo "   PKG_IGNORE 生成 PKG_CONFIG_PATH 时要忽略的 grep PATTERNS。默认 ssl1"
+    echo "              grep -v PKG_IGNORE."
+}
+
+TARGET="${TARGET:-/usr/local}"
+export TARGET
+
+# $FILE_LIST-dev  安装的开发包文件包括符号链接。文件名。
+# $FILE_LIST-make 编译的可执行文件不含符号链接。路径及文件名。
+# $FILE_LIST-a    保留的*.a。
+FILE_LIST=/usr/src/news-latest
+
+x_before() {
+    local counter=1
+    if [ -f /usr/src/.counter ]; then
+        counter="$(cat /usr/src/.counter)"
+        counter=$((counter + 1))
+    fi
+    echo "$counter" > /usr/src/.counter
+    find "$TARGET" \( -type f -o -type l \) \( -perm '/0111' -o -name "*.so" -o -name "*.so.*" \) |
+        sort -u > "/usr/src/$counter-before"
+}
+
+x_dev() {
+    if ! [ -f /usr/src/.counter ]; then
+        return
+    fi
+    local counter
+    counter="$(cat /usr/src/.counter)"
+
+    # 查找范围不小于 x_after
+    find "$TARGET" \( -type f -o -type l \) \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) |
+        sort -u > "/usr/src/$counter-dev"
+    comm -13 "/usr/src/$counter-before" "/usr/src/$counter-dev" | \
+        awk -F/ '{print $NF}' | sort -u > "$FILE_LIST-dev"
+}
+
+x_after() {
+    if ! [ -f /usr/src/.counter ]; then
+        return
+    fi
+    local counter
+    counter="$(cat /usr/src/.counter)"
+    name="$(basename "$(pwd)")"
+
+    # 文件用于 scanelf 和 strip 及下一步可能需要的静态库，排除符号链接。
+    find "$TARGET" -type f \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) | sort -u > "/usr/src/$counter-after"
+    comm -13 "/usr/src/$counter-dev" "/usr/src/$counter-after" > "/usr/src/news-$counter-${name}"
+    ln -sf "/usr/src/news-$counter-${name}" "$FILE_LIST-make"
+    rm -f "/usr/src/$counter-"*
+}
+
+apk_add() {
+    x_before
+    apk add --no-cache --virtual .phpize-deps $PHPIZE_DEPS "$@"
+    x_dev
+
+    PKG_CONFIG_PATH=$(find /usr -name "*.pc" -type f | grep -v "${PKG_IGNORE:-ssl1}" |
+        tr '\n' '\0' | xargs -r0 -n 1 dirname | sort -u | awk 'NF && $1 != "" {printf(":%s",$0)}')
+    PKG_CONFIG_PATH=${PKG_CONFIG_PATH:1}
+    export PKG_CONFIG_PATH
+    echo "$PKG_CONFIG_PATH"
+}
+
+prune() {
+    local keep_dev=
+    local keep_a=
+    local keep_symbols=
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        dev | --keep-dev)
+            keep_dev=yes
+            ;;
+        static | --keep-static)
+            keep_a=yes
+            ;;
+        no-strip | --no-strip)
+            keep_symbols=yes
+            ;;
+        esac
+        shift
+    done
+
+    x_after
+
+    local SRC_DIR
+    SRC_DIR="$(pwd)"
+    local remove_src
+
+    cd /usr/src
+    if [ -f "$SRC_DIR/.remove_tar_file" ]; then
+        remove_src="$SRC_DIR*"
+    else
+        remove_src="$SRC_DIR"
+    fi
+    # 注意：$remove_src 不应该被引号包裹，以便通配符能够展开
+    rm -rf "${TARGET}/share/"*doc/* "${TARGET}/share/man/"* /tmp/* $remove_src
+
+    if [ -z "${keep_symbols}" ] && [ -f "$FILE_LIST-make" ]; then
+        cat "$FILE_LIST-make" | tr '\n' '\0' | xargs -r0 strip --strip-all 2>/dev/null || :
+    fi
+
+    touch "$FILE_LIST-a"
+    if [ -n "${keep_a}" ]; then
+        cat "$FILE_LIST-a" "$FILE_LIST-make" | grep ".a$" | sort -u > "$FILE_LIST-a.tmp"
+        mv "$FILE_LIST-a.tmp" "$FILE_LIST-a"
+    fi
+    comm -13 "$FILE_LIST-a" <(find "$TARGET" -type f -name "*.a" | sort -u) |
+        tr '\n' '\0' | xargs -r0 rm -f
+
+    local run_deps
+    run_deps="$(need_deps)"
+    if [ -n "$run_deps" ] && [ -f /usr/src/deps.txt ]; then
+        run_deps=$(echo "$run_deps" | grep -v -s -F -f /usr/src/deps.txt || :)
+    fi
+    if [ -n "$run_deps" ]; then
+        echo "=== $(basename "$SRC_DIR") deps:"
+        echo "$run_deps" | tee -a /usr/src/deps.txt
+        echo "==="
+
+        apk add --no-cache $run_deps
+    fi
+
+    rm -f "$FILE_LIST-make" "$FILE_LIST-dev"
+
+    if [ -z "${keep_dev}" ]; then
+        apk del --no-network .phpize-deps
+    fi
+}
+
+need_deps() {
+    {
+        if [ -f "$FILE_LIST-make" ]; then
+            cat "$FILE_LIST-make" | tr '\n' '\0' |
+                xargs -0r -n 8 scanelf --needed --nobanner --format '%n#p'
+        else
+            scanelf --needed --nobanner --format '%n#p' --recursive "$TARGET"
+        fi
+    } | tr ',' '\n' | sort -u |
+        {
+            lib_list=$(find "$TARGET" -name "*.so*" \( -type f -o -type l \) 2>/dev/null | \
+                    awk -F/ '{print $NF}' | sort -u)
+            if [ -f "$FILE_LIST-dev" ] && [ -n "$lib_list" ]; then
+                lib_list=$(echo "$lib_list" | grep -v -s -F -f "$FILE_LIST-dev" || :)
+            fi
+            comm -13 <(echo "$lib_list" | sort -u) - | awk 'NF && $1 != "" {print "so:" $1}'
+        }
+}
+
+# Params: LIB_NAME LIB_URL LIB_SHA256
+download() {
+    if [ $# -lt 3 ]; then
+        usage
+        return 1
+    fi
+
+    LIB_NAME="$1"
+    local LIB_URL="$2"
+    local LIB_SHA256="$3"
+    shift 3
+
+    local LIB_FILE
+    LIB_FILE="$(basename "$LIB_URL")"
+    local LIB_EXT="${LIB_FILE##*.tar}"
+    LIB_FILE="$LIB_NAME.tar$LIB_EXT"
+
+    mkdir -p "/usr/src"
+    cd /usr/src
+    curl -Lko "$LIB_FILE" "$LIB_URL"
+    echo "$LIB_SHA256 *$LIB_FILE" | sha256sum -c -
+
+    if [ $# -gt 0 ] && [ "$1" = "tar" ]; then
+        mkdir -p "/usr/src/$LIB_NAME"
+        cd /usr/src
+        tar -axf "$LIB_FILE" -C "/usr/src/$LIB_NAME" --strip-components=1
+
+        cd "/usr/src/$LIB_NAME"
+        touch .remove_tar_file
+    fi
+}
+
+main() {
+    case "$1" in
+        download)
+            shift
+            download "$@"
+            ;;
+        init)
+            download "$2" "$3" "$4" tar
+            shift 4
+            apk_add "$@"
+            ;;
+        php-init)
+            docker-php-source extract
+            cd /usr/src/php
+
+            shift
+            apk_add "$@"
+            ;;
+        patch)
+            shift
+            local i=1
+            local p
+            for p in "$@"; do
+                curl -Lko "$i.patch" "$p"
+                patch -p1 < "$i.patch"
+                i=$((i + 1))
+            done
+            ;;
+        make)
+            local run_test=
+            local arg
+            shift
+            for arg in "$@"; do
+                case "$arg" in
+                test | --test)
+                    run_test=yes
+                    ;;
+                esac
+            done
+
+            make -j "$(nproc)"
+            make install
+            if [ -n "${run_test}" ]; then
+                make test
+            fi
+            make clean
+
+            prune "$@"
+            ;;
+        deps)
+            need_deps
+            ;;
+        prune)
+            shift
+            prune "$@"
+            ;;
+        help)
+            usage
+            ;;
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

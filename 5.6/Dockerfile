@@ -3,7 +3,7 @@ ARG mirrors=
 ARG gnu_mirrors=http://ftp.gnu.org/pub/gnu
 ARG TZ=
 
-FROM alpine:3.18 AS builder
+FROM alpine:3.22 AS builder
 
 ARG mirrors
 ARG gnu_mirrors
@@ -16,70 +16,68 @@ RUN if [ -n "${mirrors}" ]; then \
 	fi
 
 RUN apk add --no-cache \
-		ca-certificates \
-		curl \
-		tar \
-		xz \
-	; \
-	update-ca-certificates
+		curl
 
-ENV PHPIZE_DEPS="autoconf gcc libc-dev make"
+ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch"
+ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
+ENV PHP_CPPFLAGS="$PHP_CFLAGS"
+ENV PHP_LDFLAGS="-Wl,-O1 -pie"
+
+ENV PHP_SSL=/usr/local/ssl1.0
 
 RUN set -ex; \
+	TARGET="${PHP_SSL}"; \
 	. docker-lib init 'openssl-1.0' \
 		"https://github.com/openssl/openssl/releases/download/OpenSSL_1_0_2u/openssl-1.0.2u.tar.gz" \
-		'ecd0c6ffb493dd06707d38b14bb4d8c2288bb7033735606569d8f90f89669d16'; pwd;\
-	./config shared --prefix=/usr/local; \
-	. docker-lib make; \
-	rm -rf /usr/local/ssl/man
+		'ecd0c6ffb493dd06707d38b14bb4d8c2288bb7033735606569d8f90f89669d16'; \
+	./config shared --prefix=${TARGET} --openssldir=${TARGET}/ssl; \
+	# make test failed
+	docker-lib make; \
+	rm -rf ${TARGET}/ssl/man
 
+# apline: gnu-libiconv but
 RUN set -ex; \
 	. docker-lib init "libiconv" \
 		"${gnu_mirrors}/libiconv/libiconv-1.18.tar.gz" \
 		"3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8"; \
-	./configure --prefix=/usr/local; \
-	. docker-lib make; \
-	ln -s /usr/local/lib/libiconv.so* /lib/
+	./configure --prefix=$TARGET; \
+	docker-lib make
 
 RUN set -eux; \
 	. docker-lib init "zlib-1.2" \
 		"https://github.com/madler/zlib/releases/download/v1.2.13/zlib-1.2.13.tar.gz" \
 		"b3a24de97a8fdbc835b9833169501030b8977031bcb54b3b3ac13740f846ab30"; \
-	./configure --prefix=/usr/local; \
-	. docker-lib make
+	./configure --prefix=${TARGET}; \
+	docker-lib make
 
 RUN set -ex; \
 	. docker-lib init "libxml2-2.12" \
 		"https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.10.tar.xz" \
 		"c3d8c0c34aa39098f66576fe51969db12a5100b956233dc56506f7a8679be995"; \
-	./configure --prefix=/usr/local \
+	sed 's/LIBXML_MAJOR_VERSION=2/LIBXML_MAJOR_VERSION=102/' -i configure; \
+	./configure --prefix=$TARGET \
 		--with-python=no \
-		--with-http=no \
-		--with-readline=no \
-		--with-lzma=no \
-		--with-zlib=no \
+		--with-lzma \
+		--with-zlib \
 		; \
-	. docker-lib make
+	docker-lib make
 
+# alpine: freetype-config not found.
 RUN set -ex; \
 	. docker-lib init "freetype" \
 		"https://download.savannah.gnu.org/releases/freetype/freetype-2.14.1.tar.xz" \
 		"32427e8c471ac095853212a37aef816c60b42052d4d9e48230bab3bdf2936ccc"; \
-	./configure --prefix=/usr/local --enable-freetype-config; \
-	. docker-lib make
+	./configure --prefix=$TARGET --enable-freetype-config; \
+	docker-lib make
 
 RUN set -ex; \
-	. docker-lib download php \
+	docker-lib download php \
 		"https://www.php.net/distributions/php-5.6.40.tar.xz" \
 		"1369a51eee3995d7fbd1c5342e5cc917760e276d561595b6052b21ace2656d1c"
 
 ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=5.6.40
 ENV PHP_INI_DIR=/usr/local/etc/php
-
-ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
-ENV PHP_CPPFLAGS="$CFLAGS"
-ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -eux; \
 	. docker-lib php-init \
@@ -114,7 +112,7 @@ RUN set -eux; \
 		--with-libxml-dir=/usr/local \
 		--with-mhash \
 		--with-onig \
-		--with-openssl=/usr/local \
+		--with-openssl=${PHP_SSL} \
 		--with-pear \
 		--with-pic \
 		--with-readline \
@@ -124,17 +122,19 @@ RUN set -eux; \
 		--with-sqlite3=/usr \
 	; \
 	cp -v php.ini-* "$PHP_INI_DIR/"; \
-	. docker-lib make; \
+	docker-lib make; \
 	php -v
 
 RUN set -eux; \
 	mkdir -p /usr/local/etc/php-fpm.d "$(php -r "echo ini_get('extension_dir');")"; \
 	cd /usr/local/etc; \
+	# /usr/local/etc
 	cp php-fpm.conf.default php-fpm.d/www.conf; \
 	{ \
 		echo '[global]'; \
 		echo 'include=etc/php-fpm.d/*.conf'; \
 	} | tee php-fpm.conf; \
+	# /usr/local/etc/php-fpm.d
 	{ \
 		echo '[global]'; \
 		echo 'error_log = /proc/self/fd/2'; \
@@ -154,13 +154,16 @@ RUN set -eux; \
 		echo '[www]'; \
 		echo 'listen = 9000'; \
 	} | tee php-fpm.d/zz-docker.conf; \
-	mkdir -p "$PHP_INI_DIR/conf.d"; \
+	# /usr/local/etc/php
+	cd "$PHP_INI_DIR"; \
 	{ \
 		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
 		echo 'fastcgi.logging = Off'; \
-	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"; \
-	\
-	cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+	} > "conf.d/docker-fpm.ini"; \
+	{ \
+		echo '[Date]'; \
+		echo 'date.timezone = ${TZ}'; \
+	} > "conf.d/timezone.ini"
 
 RUN set -eux; \
 	. docker-lib php-init \
@@ -172,6 +175,7 @@ RUN set -eux; \
 		libmcrypt-dev \
 		libpng-dev \
 		libvpx-dev \
+		libxml2-dev \
 		libxpm-dev \
 		libxslt-dev \
 	; \
@@ -184,6 +188,7 @@ RUN set -eux; \
 		--with-png-dir \
 		--with-vpx-dir \
 		--with-xpm-dir \
+		--with-zlib-dir=/usr/local \
 	; \
 	\
 	docker-php-ext-install \
@@ -203,12 +208,13 @@ RUN set -eux; \
 		zip \
 	; \
 	\
-	. docker-lib prune
+	docker-lib prune
 
 RUN set -eux; \
 	. docker-lib php-init; \
 	\
-	curl -kLo /usr/local/ssl/cert.pem https://curl.se/ca/cacert.pem; \
+	mkdir -p ${PHP_SSL}/ssl; \
+	curl -kLo ${PHP_SSL}/ssl/cert.pem https://curl.se/ca/cacert.pem; \
 	pecl update-channels; \
 	\
 	pecl install \
@@ -223,7 +229,7 @@ RUN set -eux; \
 	; \
 	\
 	rm -rf ~/.pearrc; \
-	. docker-lib prune
+	docker-lib prune
 
 RUN set -eux; \
 	FILE_PATH="/usr/local/bin/composer";\
