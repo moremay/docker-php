@@ -35,7 +35,6 @@ RUN set -ex; \
 	docker-lib make; \
 	rm -rf ${TARGET}/ssl/man
 
-# apline: gnu-libiconv but
 RUN set -ex; \
 	. docker-lib init "libiconv" \
 		"${gnu_mirrors}/libiconv/libiconv-1.18.tar.gz" \
@@ -87,6 +86,7 @@ RUN set -eux; \
 	; \
 	\
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
+	cp -v php.ini-* "$PHP_INI_DIR/"; \
 	export \
 		CFLAGS="$PHP_CFLAGS" \
 		CPPFLAGS="$PHP_CPPFLAGS" \
@@ -121,7 +121,6 @@ RUN set -eux; \
 		--with-pdo-sqlite=/usr \
 		--with-sqlite3=/usr \
 	; \
-	cp -v php.ini-* "$PHP_INI_DIR/"; \
 	docker-lib make; \
 	php -v
 
@@ -143,6 +142,8 @@ RUN set -eux; \
 		echo '; php-fpm closes STDOUT on startup, so sending logs to /proc/self/fd/1 does not work.'; \
 		echo '; https://bugs.php.net/bug.php?id=73886'; \
 		echo 'access.log = /proc/self/fd/2'; \
+		echo; \
+		echo 'clear_env = no'; \
 		echo; \
 		echo '; Ensure worker stdout and stderr are sent to the main error log.'; \
 		echo 'catch_workers_output = yes'; \
@@ -221,7 +222,6 @@ RUN set -eux; \
 		redis-4.3.0 \
 		timezonedb \
 	; \
-	chmod +x "$(php -r "echo ini_get('extension_dir');")"/*.so; \
 	\
 	docker-php-ext-enable \
 		redis \
@@ -236,7 +236,7 @@ RUN set -eux; \
 	FILE_SHA256='8b3f41253363f0645402d1951d6e7f02adedeef29c16de6074763e463e25c23f'; \
 	curl -Lko "$FILE_PATH" https://getcomposer.org/download/2.2.25/composer.phar; \
 	echo "$FILE_SHA256 *$FILE_PATH" | sha256sum -c -; \
-	chmod u+x "$FILE_PATH"; \
+	chmod +x "$FILE_PATH"; \
 	\
 	composer --version
 

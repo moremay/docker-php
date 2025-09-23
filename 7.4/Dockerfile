@@ -1,135 +1,96 @@
-ARG composer=
+# syntax=docker/dockerfile:1.4
 ARG mirrors=
+ARG gnu_mirrors=http://ftp.gnu.org/pub/gnu
+ARG TZ=
 
-FROM alpine:3.16
+FROM alpine:3.22 AS builder
 
-ARG composer
 ARG mirrors
+ARG gnu_mirrors
+ARG TZ
 
 COPY docker-* /usr/local/bin/
-
-ENV PHPIZE_DEPS="autoconf dpkg-dev dpkg file g++ gcc libc-dev make pkgconf re2c"
 
 RUN if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi
 
-RUN	apk add --no-cache \
-		ca-certificates \
-		curl \
-		tar \
-		xz \
-	; \
-	update-ca-certificates
-
-RUN set -eux; \
-	adduser -u 82 -D -S -G www-data www-data
-
-RUN set -eux; \
-	\
-	OPENSSL_NAME='openssl-1.1.1w'; \
-	OPENSSL_URL="https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/$OPENSSL_NAME.tar.gz"; \
-	OPENSSL_SHA256='cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8'; \
-	\
-	mkdir -p /usr/src; \
-	cd /usr/src; \
-	curl -LkO "$OPENSSL_URL"; \
-	ls -l; \
-	echo "$OPENSSL_SHA256 *$OPENSSL_NAME.tar.gz" | sha256sum -bc -; \
-	tar xzf "$OPENSSL_NAME.tar.gz"; \
-	\
-	apk add --no-cache --virtual .phpize-deps \
-		$PHPIZE_DEPS \
-	; \
-	\
-	cd "$OPENSSL_NAME"; \
-	./config shared --prefix=/usr/local; \
-	make -j $(nproc) && make install; \
-	make clean; \
-	\
-	cd /usr/src; \
-	rm -rf /usr/src/openssl*; \
-	\
-	docker-apk-prune /usr/local
-
-RUN set -eux; \
-	\
-	GNUICONV_NAME="libiconv-1.18"; \
-	GNUICONV_URL="https://mirrors.aliyun.com/gnu/libiconv/$GNUICONV_NAME.tar.gz"; \
-	#GNUICONV_URL="http://ftp.gnu.org/pub/gnu/libiconv/$GNUICONV_NAME.tar.gz"; \
-	GNUICONV_SHA256="3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8"; \
-	\
-	mkdir -p /usr/src; \
-	cd /usr/src; \
-	curl -LkO "$GNUICONV_URL"; \
-	echo "$GNUICONV_SHA256 *$GNUICONV_NAME.tar.gz" | sha256sum -c -; \
-	tar xzf "$GNUICONV_NAME.tar.gz"; \
-	\
-	apk add --no-cache --virtual .phpize-deps \
-		$PHPIZE_DEPS \
-	; \
-	\
-	cd "$GNUICONV_NAME"; \
-	./configure --prefix=/usr/local; \
-	make -j $(nproc) && make install; \
-	make clean; \
-	ln -s /usr/local/lib/libiconv.so* /lib/; \
-	\
-	cd /usr/src; \
-	rm -rf /usr/src/libiconv*; \
-	rm -vf /usr/include/iconv.h; \
-	\
-	docker-apk-prune /usr/local
-
-ENV PHP_INI_DIR=/usr/local/etc/php
-RUN set -eux; \
-	mkdir -p "$PHP_INI_DIR/conf.d"; \
-	[ ! -d /var/www/html ]; \
-	mkdir -p /var/www/html; \
-	chown www-data:www-data /var/www/html; \
-	chmod 1777 /var/www/html
-
-ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
+ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
+RUN set -eux; \
+	apk add --no-cache --virtual .init curl; \
+	. docker-lib init "curl" \
+		"https://curl.se/download/curl-8.16.0.tar.xz" \
+		"40c8cddbcb6cc6251c03dea423a472a6cea4037be654ba5cf5dec6eb2d22ff1d" \
+		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
+		gnutls-dev; \
+	./configure --prefix=$TARGET \
+		# replace openssl
+		--with-gnutls \
+		--enable-ares \
+		--enable-ipv6 \
+		--enable-unix-sockets \
+		--enable-static \
+		--with-libidn2 \
+		--with-nghttp2 \
+		--with-ca-bundle=/etc/ssl/cert.pem \
+		--with-ca-path=/etc/ssl/certs \
+		--with-zsh-functions-dir \
+		--with-fish-functions-dir \
+		--disable-ldap \
+		--with-pic \
+		--enable-websockets \
+		--without-libssh2 \
+		; \
+	docker-lib make; \
+	apk del --no-network .init
+
+RUN set -eux; \
+	. docker-lib init 'openssl-1.1' \
+		"https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz" \
+		'cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8' \
+		linux-headers; \
+	./config shared --prefix=${TARGET} --openssldir=${TARGET}/ssl; \
+	docker-lib make; \
+	rm -rf ${TARGET}/ssl/man
+
+RUN set -eux; \
+	. docker-lib init "libiconv" \
+		"${gnu_mirrors}/libiconv/libiconv-1.18.tar.gz" \
+		"3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8"; \
+	./configure --prefix=$TARGET; \
+	docker-lib make
+
+RUN set -ex; \
+	docker-lib download php \
+		"https://www.php.net/distributions/php-7.4.33.tar.xz" \
+		"924846abf93bc613815c55dd3f5809377813ac62a9ec4eb3778675b82a27b927"
+
+ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=7.4.33
-ENV PHP_URL="https://www.php.net/distributions/php-7.4.33.tar.xz"
-ENV PHP_SHA256="924846abf93bc613815c55dd3f5809377813ac62a9ec4eb3778675b82a27b927"
+ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
-	\
-	mkdir -p /usr/src; \
-	cd /usr/src; \
-	\
-	curl -ko php.tar.xz "$PHP_URL"; \
-	\
-	if [ -n "$PHP_SHA256" ]; then \
-		echo "$PHP_SHA256 *php.tar.xz" | sha256sum -c -; \
-	fi
-
-RUN set -eux; \
-	apk add --no-cache --virtual .phpize-deps \
-		$PHPIZE_DEPS \
+	. docker-lib php-init \
 		argon2-dev \
 		coreutils \
-		curl-dev \
 		libsodium-dev \
 		libxml2-dev \
 		linux-headers \
 		oniguruma-dev \
-		readline-dev \
 		sqlite-dev \
-		unixodbc-dev \
-	; \
+		; \
 	\
+	mkdir -p "$PHP_INI_DIR/conf.d"; \
+	cp -v php.ini-* "$PHP_INI_DIR/"; \
 	export \
 		CFLAGS="$PHP_CFLAGS" \
 		CPPFLAGS="$PHP_CPPFLAGS" \
-		LDFLAGS="$PHP_LDFLAGS" \
+		LDFLAGS="$PHP_LDFLAGS -Wl,--enable-new-dtags,-R,/usr/lib:/usr/local/lib" \
 	; \
-	docker-php-source extract; \
-	cd /usr/src/php; \
 	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
 	./configure \
 		--with-config-file-path="$PHP_INI_DIR" \
@@ -142,82 +103,58 @@ RUN set -eux; \
 		--with-fpm-user=www-data \
 		--with-fpm-group=www-data \
 		\
-		--enable-ftp \
 		--enable-mbregex \
 		--enable-mbstring \
 		--enable-mysqlnd \
-		--with-curl \
-		--with-iconv=/usr/local \
-		--with-libxml \
 		--with-mhash \
-		--with-openssl=/usr/local \
-		--with-password-argon2 \
-		--with-pear \
 		--with-pic \
-		--with-readline \
+		--with-password-argon2 \
 		--with-sodium=shared \
-		--with-zlib \
 		\
 		--with-pdo-sqlite=/usr \
 		--with-sqlite3=/usr \
-		--with-pdo-odbc=unixODBC,/usr \
+		\
+		--with-iconv=/usr/local \
+		--with-libxml \
+		--with-openssl \
+		--with-pear \
+		--with-zlib \
 	; \
-	make -j $(nproc); \
-	find -type f -name '*.a' -delete; \
-	make install; \
+	docker-lib make; \
 	\
 	docker-php-ext-enable \
 		sodium \
+		opcache \
 	; \
-	\
-	find \
-		/usr/local \
-		-type f \
-		-perm '/0111' \
-		-exec sh -euxc ' \
-			strip --strip-all "$@" || : \
-		' -- '{}' + \
-	; \
-	make clean; \
-	cp -v php.ini-* "$PHP_INI_DIR/"; \
-	\
-	docker-apk-prune /usr/local; \
 	\
 	php -v
 
-ENTRYPOINT ["docker-php-entrypoint"]
-WORKDIR /var/www/html
-
 RUN set -eux; \
-	mkdir -p "$(php -r "echo ini_get('extension_dir');")"; \
+	mkdir -p /usr/local/etc/php-fpm.d "$(php -r "echo ini_get('extension_dir');")"; \
 	cd /usr/local/etc; \
-	if [ -d php-fpm.d ]; then \
-		# for some reason, upstream's php-fpm.conf.default has "include=NONE/etc/php-fpm.d/*.conf"
-		sed 's!=NONE/!=!g' php-fpm.conf.default | tee php-fpm.conf > /dev/null; \
-		cp php-fpm.d/www.conf.default php-fpm.d/www.conf; \
-	else \
-		# PHP 5.x doesn't use "include=" by default, so we'll create our own simple config that mimics PHP 7+ for consistency
-		mkdir php-fpm.d; \
-		cp php-fpm.conf.default php-fpm.d/www.conf; \
-		{ \
-			echo '[global]'; \
-			echo 'include=etc/php-fpm.d/*.conf'; \
-		} | tee php-fpm.conf; \
-	fi; \
+	# /usr/local/etc
+	cp php-fpm.conf.default php-fpm.d/www.conf; \
+	{ \
+		echo '[global]'; \
+		echo 'include=etc/php-fpm.d/*.conf'; \
+	} | tee php-fpm.conf; \
+	# /usr/local/etc/php-fpm.d
 	{ \
 		echo '[global]'; \
 		echo 'error_log = /proc/self/fd/2'; \
+		echo '; https://github.com/docker-library/php/pull/725#issuecomment-443540114'; \
+		echo 'log_limit = 8192'; \
 		echo; \
 		echo '[www]'; \
 		echo '; php-fpm closes STDOUT on startup, so sending logs to /proc/self/fd/1 does not work.'; \
 		echo '; https://bugs.php.net/bug.php?id=73886'; \
 		echo 'access.log = /proc/self/fd/2'; \
 		echo; \
+		echo 'clear_env = no'; \
+		echo; \
 		echo '; Ensure worker stdout and stderr are sent to the main error log.'; \
 		echo 'catch_workers_output = yes'; \
-		echo; \
-		echo "[date]"; \
-		echo 'date.timezone = "Asia/Shanghai"'; \
+		echo 'decorate_workers_output = no'; \
 	} | tee php-fpm.d/docker.conf; \
 	{ \
 		echo '[global]'; \
@@ -226,30 +163,25 @@ RUN set -eux; \
 		echo '[www]'; \
 		echo 'listen = 9000'; \
 	} | tee php-fpm.d/zz-docker.conf; \
-	mkdir -p "$PHP_INI_DIR/conf.d"; \
+	# /usr/local/etc/php
+	cd "$PHP_INI_DIR"; \
 	{ \
 		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
 		echo 'fastcgi.logging = Off'; \
-	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"; \
-	\
-	cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
-	sed -i 's#^;date\.timezone.*$#date.timezone = "Asia/Shanghai"#' "$PHP_INI_DIR/php.ini"
-
-# Override stop signal to stop process gracefully
-# https://github.com/php/php-src/blob/17baa87faddc2550def3ae7314236826bc1b1398/sapi/fpm/php-fpm.8.in#L163
-STOPSIGNAL SIGQUIT
-
-EXPOSE 9000
-CMD ["php-fpm"]
+	} > "conf.d/docker-fpm.ini"; \
+	{ \
+		echo '[Date]'; \
+		echo 'date.timezone = ${TZ}'; \
+	} > "conf.d/timezone.ini"
 
 RUN set -eux; \
-	apk add --no-cache --virtual .phpize-deps \
-		$PHPIZE_DEPS \
+	. docker-lib php-init \
 		bzip2-dev \
 		freetype-dev \
 		gettext-dev \
 		gmp-dev \
 		icu-dev \
+		libedit-dev \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
 		libpng-dev \
@@ -257,66 +189,71 @@ RUN set -eux; \
 		libxpm-dev \
 		libxslt-dev \
 		libzip-dev \
+		readline-dev \
+		unixodbc-dev \
+		# curl
+		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
+		gnutls-dev \
 	; \
+	docker-lib download "php/ext/redis" \
+		"https://github.com/phpredis/phpredis/archive/refs/tags/6.2.0.tar.gz" \
+		"470333b27cbf9485d36b610b81300c06491a6575f22c6801a9cefc55285ed123" \
+		tar; \
+	docker-lib download "php/ext/timezonedb" \
+		"https://pecl.php.net/get/timezonedb-2025.2.tgz" \
+		"ae32b224a843df303d61bffbf38ce325e0ca6117b92a974a101a6729d1ce5fea" \
+		tar; \
 	\
-	docker-php-source extract; \
-	\
-	docker-php-ext-configure \
-		gd \
+	docker-php-ext-configure gd \
 		--with-freetype \
 		--with-jpeg \
 		--with-webp \
 		--with-xpm \
 	; \
+	docker-php-ext-configure pdo_odbc \
+		--with-pdo-odbc=unixODBC,/usr; \
 	\
 	docker-php-ext-install \
 		bcmath \
 		bz2 \
+		curl \
 		exif \
 		gd \
 		gettext \
 		gmp \
 		mysqli \
-		opcache \
 		pdo_mysql \
+		pdo_odbc \
+		readline \
+		redis \
 		sockets \
+		timezonedb \
 		xsl \
 		zip \
 	; \
 	\
-	docker-apk-prune
+	docker-lib prune
 
 RUN set -eux; \
-	apk add --no-cache --virtual .phpize-deps \
-		$PHPIZE_DEPS \
-		libmcrypt-dev \
-	; \
+	FILE_PATH="/usr/local/bin/composer";\
+	FILE_SHA256="$(curl -Lk https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
+	curl -Lko "$FILE_PATH" https://getcomposer.org/download/latest-stable/composer.phar; \
+	echo "$FILE_SHA256 *$FILE_PATH" | sha256sum -c -; \
+	chmod +x "$FILE_PATH"; \
 	\
-	docker-php-source extract; \
-	pecl update-channels; \
-	\
-	pecl install \
-		mcrypt \
-		redis \
-		timezonedb \
-	; \
-	chmod +x "$(php -r "echo ini_get('extension_dir');")"/*.so; \
-	\
-	docker-php-ext-enable \
-		mcrypt \
-		redis \
-		timezonedb \
-	; \
-	\
-	rm -rf /tmp/pear ~/.pearrc; \
-	docker-apk-prune
+	composer --version
 
 RUN set -eux; \
-	if [ "${composer}" == "yes" ]; then \
-	FILE_SHA256="$(curl https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
-	curl -o /usr/bin/composer https://getcomposer.org/download/latest-stable/composer.phar; \
-	echo "$FILE_SHA256 */usr/bin/composer" | sha256sum -c -; \
-	chmod u+x /usr/bin/composer; \
-	\
-	composer --version; \
-	fi
+	adduser -u 82 -D -S -G www-data www-data; \
+	mkdir -p /var/www/html; \
+	chown www-data:www-data /var/www/html; \
+	chmod 1777 /var/www/html
+
+WORKDIR /var/www/html
+ENTRYPOINT ["docker-php-entrypoint"]
+CMD ["php-fpm"]
+EXPOSE 9000
+
+# Override stop signal to stop process gracefully
+# https://github.com/php/php-src/blob/17baa87faddc2550def3ae7314236826bc1b1398/sapi/fpm/php-fpm.8.in#L163
+STOPSIGNAL SIGQUIT

@@ -87,6 +87,7 @@ RUN set -eux; \
 	; \
 	\
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
+	cp -v php.ini-* "$PHP_INI_DIR/"; \
 	export \
 		CFLAGS="$PHP_CFLAGS" \
 		CPPFLAGS="$PHP_CPPFLAGS" \
@@ -119,7 +120,6 @@ RUN set -eux; \
 		--with-pdo-sqlite=/usr \
 		--with-sqlite3=/usr \
 	; \
-	cp -v php.ini-* "$PHP_INI_DIR/"; \
 	docker-lib make; \
 	php -v
 
@@ -234,7 +234,6 @@ RUN set -eux; \
 		timezonedb-2021.1 \
 		ZendOpcache \
 	; \
-	chmod +x "$(php -r "echo ini_get('extension_dir');")"/*.so; \
 	\
 	docker-php-ext-enable \
 		opcache \
@@ -250,7 +249,7 @@ RUN set -eux; \
 	FILE_SHA256='8b3f41253363f0645402d1951d6e7f02adedeef29c16de6074763e463e25c23f'; \
 	curl -Lko "$FILE_PATH" https://getcomposer.org/download/2.2.25/composer.phar; \
 	echo "$FILE_SHA256 *$FILE_PATH" | sha256sum -c -; \
-	chmod u+x "$FILE_PATH"; \
+	chmod +x "$FILE_PATH"; \
 	\
 	composer --version
 

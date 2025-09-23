@@ -9,18 +9,19 @@ usage() {
     echo "        列出当前安装的可执行文件所需的动态库依赖。"
     echo "        List dynamic library dependencies of currently installed executables."
     echo ""
-    echo "    download <name> <tar-url> <sha256> [tar]"
-    echo "        下载一个压缩包并验证其 SHA256 校验和。"
+    echo "    download <rel-path> <tar-url> <sha256> [tar]"
+    echo "        下载一个tar压缩包并验证其 SHA256 校验和。"
     echo "        Download a tarball and verify its SHA256 checksum."
     echo "        ---"
-    echo "        tar   解压压缩包。extract a tarball."
+    echo "        rel-path  a/b/c : save to /usr/src/a/b/c.tgz, tar extract to /usr/src/a/b/c/"
+    echo "        tar       解压压缩包。extract a tarball."
     echo ""
     echo "    help"
     echo "        显示此帮助信息。"
     echo "        Show this help message."
     echo ""
-    echo "    init <name> <tar-url> <sha256> [deps...]"
-    echo "        下载并解压压缩包，进入目录，并安装构建依赖。"
+    echo "    init <rel-path> <tar-url> <sha256> [deps...]"
+    echo "        下载并解压tar压缩包，进入目录，并安装构建依赖。"
     echo "        Download and extract a tarball, enter directory, and install build dependencies."
     echo ""
     echo "    make [test] [dev] [static] [no-strip]"
@@ -184,52 +185,82 @@ prune() {
 }
 
 need_deps() {
-    {
-        if [ -f "$FILE_LIST-make" ]; then
-            cat "$FILE_LIST-make" | tr '\n' '\0' |
-                xargs -0r -n 8 scanelf --needed --nobanner --format '%n#p'
-        else
-            scanelf --needed --nobanner --format '%n#p' --recursive "$TARGET"
-        fi
-    } | tr ',' '\n' | sort -u |
+    local lib_list
+    local deps_all
+    local deps_list
+    local deps_temp
+
+    lib_list=$(find "$TARGET" -name "*.so*" \( -type f -o -type l \) 2>/dev/null | \
+            awk -F/ '{print $NF}' | sort -u)
+    if [ -f "$FILE_LIST-dev" ] && [ -n "$lib_list" ]; then
+        lib_list=$(echo "$lib_list" | grep -v -s -F -f "$FILE_LIST-dev" || :)
+    fi
+
+    deps_temp=$(
         {
-            lib_list=$(find "$TARGET" -name "*.so*" \( -type f -o -type l \) 2>/dev/null | \
-                    awk -F/ '{print $NF}' | sort -u)
-            if [ -f "$FILE_LIST-dev" ] && [ -n "$lib_list" ]; then
-                lib_list=$(echo "$lib_list" | grep -v -s -F -f "$FILE_LIST-dev" || :)
+            if [ -f "$FILE_LIST-make" ]; then
+                cat "$FILE_LIST-make" | tr '\n' '\0' |
+                    xargs -0r -n 8 scanelf --needed --nobanner --format '%n#p'
+            else
+                scanelf --needed --nobanner --format '%n#p' --recursive "$TARGET"
             fi
-            comm -13 <(echo "$lib_list" | sort -u) - | awk 'NF && $1 != "" {print "so:" $1}'
-        }
+        } |
+        tr ',' '\n' | sort -u)
+
+    deps_list=$(comm -13 <(echo "$lib_list" | sort -u) <(echo "$deps_temp"))
+
+    cd /usr/lib
+
+    deps_all=""
+    while [ -n "$deps_list" ]; do
+        deps_all=$(echo -e "$deps_all\n$deps_list" | sort -u)
+
+        deps_temp=$(echo "$deps_list" | tr '\n' '\0' |
+                    xargs -0r -n 8 scanelf --needed --nobanner --format '%n#p' |
+                    tr ',' '\n' | sort -u)
+        deps_list=$(comm -13 <(echo "$deps_all") <(echo "$deps_temp"))
+    done
+
+    echo "$deps_all" | awk 'NF && $1 != "" {print "so:" $1}'
 }
 
-# Params: LIB_NAME LIB_URL LIB_SHA256
+# Params: REL_PATH LIB_URL LIB_SHA256
 download() {
     if [ $# -lt 3 ]; then
         usage
         return 1
     fi
 
-    LIB_NAME="$1"
+    REL_PATH="$1"
     local LIB_URL="$2"
     local LIB_SHA256="$3"
     shift 3
 
-    local LIB_FILE
-    LIB_FILE="$(basename "$LIB_URL")"
-    local LIB_EXT="${LIB_FILE##*.tar}"
-    LIB_FILE="$LIB_NAME.tar$LIB_EXT"
+    local LIB_FILE_PATH
+    LIB_FILE_PATH="$(dirname "$REL_PATH")"
+    test "." = "$LIB_FILE_PATH" && LIB_FILE_PATH=""
 
-    mkdir -p "/usr/src"
+    local LIB_FILE
+    local LIB_EXT
+    LIB_FILE="$(basename "${LIB_URL%%\?*}")"
+    case "$LIB_FILE" in
+        *.tar.*) LIB_EXT=".tar.${LIB_FILE##*.}" ;;
+        *.*)     LIB_EXT=".${LIB_FILE##*.}" ;;
+        *)       LIB_EXT="" ;;
+    esac
+    LIB_FILE="$REL_PATH$LIB_EXT"
+
+    mkdir -p "/usr/src$LIB_FILE_PATH"
     cd /usr/src
     curl -Lko "$LIB_FILE" "$LIB_URL"
     echo "$LIB_SHA256 *$LIB_FILE" | sha256sum -c -
 
     if [ $# -gt 0 ] && [ "$1" = "tar" ]; then
-        mkdir -p "/usr/src/$LIB_NAME"
+        mkdir -p "/usr/src/$REL_PATH"
         cd /usr/src
-        tar -axf "$LIB_FILE" -C "/usr/src/$LIB_NAME" --strip-components=1
+        tar -axf "$LIB_FILE" -C "/usr/src/$REL_PATH" --strip-components=1
 
-        cd "/usr/src/$LIB_NAME"
+        cd "/usr/src/$REL_PATH"
         touch .remove_tar_file
     fi
 }
