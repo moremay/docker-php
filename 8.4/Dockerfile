@@ -1,28 +1,32 @@
-ARG composer=
+# syntax=docker/dockerfile:1.4
 ARG mirrors=
+ARG gnu_mirrors=http://ftp.gnu.org/pub/gnu
+ARG TZ=
 
 FROM php:8.4-fpm-alpine
 
-ARG composer
 ARG mirrors
+ARG gnu_mirrors
+ARG TZ
 
-COPY docker-apk-* /usr/local/bin/
-
-RUN \
-	{ \
-		echo "[date]"; \
-		echo 'date.timezone = "Asia/Shanghai"'; \
-	} | tee php-fpm.d/timezone.conf; \
-	cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"; \
-	sed -i 's#^;date\.timezone.*$#date.timezone = "Asia/Shanghai"#' "$PHP_INI_DIR/php.ini"
+COPY docker-* /usr/local/bin/
 
 RUN if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi
 
+ENV TZ=${TZ:-Asia/Shanghai}
+
 RUN set -eux; \
-	apk add --no-cache --virtual .phpize-deps \
-		$PHPIZE_DEPS \
+	# /usr/local/etc/php
+	cd "$PHP_INI_DIR"; \
+	{ \
+		echo '[Date]'; \
+		echo 'date.timezone = ${TZ}'; \
+	} > "conf.d/timezone.ini"
+
+RUN set -eux; \
+	. docker-lib php-init \
 		bzip2-dev \
 		freetype-dev \
 		gettext-dev \
@@ -37,10 +41,18 @@ RUN set -eux; \
 		libxslt-dev \
 		libzip-dev \
 		linux-headers \
+		postgresql17-dev \
 		unixodbc-dev \
 	; \
 	\
-	docker-php-source extract; \
+	docker-lib download "php/ext/redis" \
+		"https://github.com/phpredis/phpredis/archive/refs/tags/6.2.0.tar.gz" \
+		"470333b27cbf9485d36b610b81300c06491a6575f22c6801a9cefc55285ed123" \
+		tar; \
+	docker-lib download "php/ext/timezonedb" \
+		"https://pecl.php.net/get/timezonedb-2025.2.tgz" \
+		"ae32b224a843df303d61bffbf38ce325e0ca6117b92a974a101a6729d1ce5fea" \
+		tar; \
 	\
 	docker-php-ext-configure \
 		gd \
@@ -51,8 +63,8 @@ RUN set -eux; \
 		--with-xpm \
 	; \
 	\
-	docker-php-ext-configure \
-		pdo_odbc --with-pdo-odbc=unixODBC,/usr \
+	docker-php-ext-configure pdo_odbc \
+		--with-pdo-odbc=unixODBC,/usr \
 	; \
 	\
 	docker-php-ext-install \
@@ -63,46 +75,24 @@ RUN set -eux; \
 		gettext \
 		gmp \
 		mysqli \
-		opcache \
 		pdo_mysql \
 		pdo_odbc \
+		pdo_pgsql \
+		pgsql \
+		redis \
 		sockets \
+		timezonedb \
 		xsl \
 		zip \
 	; \
 	\
-	docker-apk-prune;
-RUN set -eux; \
-	apk add --no-cache --virtual .phpize-deps \
-		$PHPIZE_DEPS \
-		libmcrypt-dev \
-	; \
-	\
-	docker-php-source extract; \
-	pecl update-channels; \
-	\
-	pecl install \
-		mcrypt \
-		redis \
-		timezonedb \
-	; \
-	chmod +x "$(php -r "echo ini_get('extension_dir');")"/*.so; \
-	\
-	docker-php-ext-enable \
-		mcrypt \
-		redis \
-		timezonedb \
-	; \
-	\
-	rm -rf /tmp/pear ~/.pearrc; \
-	docker-apk-prune
+	docker-lib prune
 
 RUN set -eux; \
-	if [ "${composer}" == "yes" ]; then \
-	FILE_SHA256="$(curl https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
-	curl -o /usr/bin/composer https://getcomposer.org/download/latest-stable/composer.phar; \
-	echo "$FILE_SHA256 */usr/bin/composer" | sha256sum -c -; \
-	chmod u+x /usr/bin/composer; \
+	FILE_PATH="/usr/local/bin/composer";\
+	FILE_SHA256="$(curl -Lk https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
+	curl -Lko "$FILE_PATH" https://getcomposer.org/download/latest-stable/composer.phar; \
+	echo "$FILE_SHA256 *$FILE_PATH" | sha256sum -c -; \
+	chmod +x "$FILE_PATH"; \
 	\
-	composer --version; \
-	fi
+	composer --version

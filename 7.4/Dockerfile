@@ -81,6 +81,7 @@ RUN set -eux; \
 		libxml2-dev \
 		linux-headers \
 		oniguruma-dev \
+		readline-dev \
 		sqlite-dev \
 		; \
 	\
@@ -118,6 +119,7 @@ RUN set -eux; \
 		--with-libxml \
 		--with-openssl \
 		--with-pear \
+		--with-readline \
 		--with-zlib \
 	; \
 	docker-lib make; \
@@ -181,7 +183,6 @@ RUN set -eux; \
 		gettext-dev \
 		gmp-dev \
 		icu-dev \
-		libedit-dev \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
 		libpng-dev \
@@ -189,7 +190,6 @@ RUN set -eux; \
 		libxpm-dev \
 		libxslt-dev \
 		libzip-dev \
-		readline-dev \
 		unixodbc-dev \
 		# curl
 		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
@@ -224,7 +224,6 @@ RUN set -eux; \
 		mysqli \
 		pdo_mysql \
 		pdo_odbc \
-		readline \
 		redis \
 		sockets \
 		timezonedb \

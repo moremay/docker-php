@@ -2,25 +2,26 @@
 set -e
 
 usage() {
-    echo "Usage: ./docker-lib.sh <command> [args]"
+    echo "Usage: ./docker-lib <command> [args]"
     echo ""
     echo "Commands:"
     echo "    deps"
     echo "        列出当前安装的可执行文件所需的动态库依赖。"
     echo "        List dynamic library dependencies of currently installed executables."
     echo ""
-    echo "    download <rel-path> <tar-url> <sha256> [tar]"
+    echo "    download <src> <tar-url> <sha256> [tar | file]"
     echo "        下载一个tar压缩包并验证其 SHA256 校验和。"
     echo "        Download a tarball and verify its SHA256 checksum."
     echo "        ---"
-    echo "        rel-path  a/b/c : save to /usr/src/a/b/c.tgz, tar extract to /usr/src/a/b/c/"
-    echo "        tar       解压压缩包。extract a tarball."
+    echo "        src   rel (/usr/src) or abs path."
+    echo "        tar   解压压缩包。extract a tarball. save to src.ext, extract to src."
+    echo "        file  目标仅当作单个文件。src 不自动添加扩展名。Target as a single file. save to src."
     echo ""
     echo "    help"
     echo "        显示此帮助信息。"
     echo "        Show this help message."
     echo ""
-    echo "    init <rel-path> <tar-url> <sha256> [deps...]"
+    echo "    init <src> <tar-url> <sha256> [deps...]"
     echo "        下载并解压tar压缩包，进入目录，并安装构建依赖。"
     echo "        Download and extract a tarball, enter directory, and install build dependencies."
     echo ""
@@ -180,6 +181,7 @@ prune() {
     rm -f "$FILE_LIST-make" "$FILE_LIST-dev"
 
     if [ -z "${keep_dev}" ]; then
+        docker-php-source delete
         apk del --no-network .phpize-deps
     fi
 }
@@ -224,43 +226,55 @@ need_deps() {
     echo "$deps_all" | awk 'NF && $1 != "" {print "so:" $1}'
 }
 
-# Params: REL_PATH LIB_URL LIB_SHA256
+# Params: LIB_PATH LIB_URL LIB_SHA256 [...]
 download() {
     if [ $# -lt 3 ]; then
         usage
         return 1
     fi
 
-    REL_PATH="$1"
+    LIB_PATH="$1"
     local LIB_URL="$2"
     local LIB_SHA256="$3"
     shift 3
 
-    local LIB_FILE_PATH
-    LIB_FILE_PATH="$(dirname "$REL_PATH")"
-    test "." = "$LIB_FILE_PATH" && LIB_FILE_PATH=""
+    local single_file=
+    local try_tar=
+    while [ $# -gt 0 ]; do
+        case "$1" in
+        tar) try_tar=yes ;;
+        file) single_file=yes ;;
+        esac
+        shift
+    done
+
+    test "." = "$LIB_PATH" && LIB_PATH=""
+    test "/" != "${LIB_PATH:0:1}" && LIB_PATH="/usr/src/$LIB_PATH"
 
     local LIB_FILE
-    local LIB_EXT
-    LIB_FILE="$(basename "${LIB_URL%%\?*}")"
-    case "$LIB_FILE" in
-        *.tar.*) LIB_EXT=".tar.${LIB_FILE##*.}" ;;
-        *.*)     LIB_EXT=".${LIB_FILE##*.}" ;;
-        *)       LIB_EXT="" ;;
-    esac
-    LIB_FILE="$REL_PATH$LIB_EXT"
+    if [ "$single_file" = "yes" ]; then
+        LIB_FILE="$LIB_PATH"
+        try_tar=
+    else
+        local LIB_EXT
+        LIB_FILE="$(basename "${LIB_URL%%\?*}")"
+        case "$LIB_FILE" in
+            *.tar.*) LIB_EXT=".tar.${LIB_FILE##*.}" ;;
+            *.*)     LIB_EXT=".${LIB_FILE##*.}" ;;
+            *)       LIB_EXT="" ;;
+        esac
+        LIB_FILE="$LIB_PATH$LIB_EXT"
+    fi
 
-    mkdir -p "/usr/src$LIB_FILE_PATH"
-    cd /usr/src
+    mkdir -p "$(dirname "$LIB_PATH")"
     curl -Lko "$LIB_FILE" "$LIB_URL"
     echo "$LIB_SHA256 *$LIB_FILE" | sha256sum -c -
 
-    if [ $# -gt 0 ] && [ "$1" = "tar" ]; then
-        mkdir -p "/usr/src/$REL_PATH"
-        cd /usr/src
-        tar -axf "$LIB_FILE" -C "/usr/src/$REL_PATH" --strip-components=1
+    if [ "$try_tar" = "yes" ]; then
+        mkdir -p "$LIB_PATH"
+        tar -axf "$LIB_FILE" -C "$LIB_PATH" --strip-components=1
 
-        cd "/usr/src/$REL_PATH"
+        cd "$LIB_PATH"
         touch .remove_tar_file
     fi
 }

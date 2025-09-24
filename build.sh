@@ -48,7 +48,7 @@ echo "Enter $work"
 pushd "$work" >/dev/null
 trap "echo Leave $work; popd >/dev/null" EXIT
 
-if [ "${ver:0,1}" = "8" ]; then
+if [ "${ver:0:1}" = "8" ]; then
   cp -uvf ../script/docker-lib .
 else
   cp -uvf ../script/docker-* .
