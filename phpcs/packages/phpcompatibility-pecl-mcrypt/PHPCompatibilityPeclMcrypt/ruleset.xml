@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+<ruleset name="PHPCompatibilityPeclMcrypt">
+    <rule ref="PHPCompatibility.Constants.RemovedConstants.mcrypt_dev_urandomDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.Extensions.RemovedExtensions.mcryptDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_ecbDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_cbcDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_cfbDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_ofbDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_create_ivDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_decryptDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_algorithms_nameDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_block_sizeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_iv_sizeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_key_sizeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_modes_nameDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_supported_key_sizesDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_is_block_algorithm_modeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_is_block_algorithmDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_is_block_modeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_self_testDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_encryptDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_generic_deinitDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_generic_initDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_genericDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_block_sizeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_cipher_nameDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_iv_sizeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_key_sizeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_list_algorithmsDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_list_modesDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_closeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_get_algo_block_sizeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_get_algo_key_sizeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_get_supported_key_sizesDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_is_block_algorithm_modeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_is_block_algorithmDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_is_block_modeDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_openDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_self_testDeprecatedRemoved">
+        <exclude-pattern>*</exclude-pattern>
+    </rule>
+
+</ruleset>

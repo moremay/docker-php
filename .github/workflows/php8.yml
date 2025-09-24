@@ -1,12 +1,11 @@
-name: "CI: cmpt"
+name: "CI: 8.x"
 
 on:
   push:
     paths:
-      - "cmpt/*"
-
+      - "8.4/*"
 jobs:
-  build_cmpt:
+  build_84:
     runs-on: ubuntu-latest
     steps:
     - name: Build the Docker image
@@ -19,6 +18,16 @@ jobs:
         password: ${{ secrets.DOCKER_TOKEN }}
 
     - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: ./8.4
+        file: ./8.4/Dockerfile
+        push: true
+        tags: |
+          moremay/php:8.4
+          moremay/php:8.4-alpine
+
+    - name: Build composer
       shell: bash
       run: |
-        ./build.sh cmpt -p
+        ./build.sh 8.4 --composer -p

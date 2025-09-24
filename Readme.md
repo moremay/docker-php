@@ -14,6 +14,7 @@ Build images for php-fpm.
   + mysql &nbsp;&nbsp;&nbsp;&nbsp; php 5. php 7, 8: Alternatives: mysqli
   + odbc &nbsp;&nbsp;&nbsp;&nbsp; php 7, 8: unixODBC
   + openssl &nbsp; php 5: openssl 1.0.2u; php 7.4: openssl 1.1.1w (curl uses gnutls); php 8: openssl 3.5.2
+  + pgsql &nbsp;&nbsp; php 8
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
   php 5: 2.2.25; php 7.4, 8.4: Latest 2.8.11
@@ -30,18 +31,16 @@ build.sh [[-v|--ver ]ver-dir-name] [-c|--composer] [-p] [--ali]
 ## PHPCompatibility
 
 [PHPCompatibility ![PHPCompatibility Current Version](https://poser.pugx.org/phpcompatibility/php-compatibility/v)](https://github.com/PHPCompatibility/PHPCompatibility)
-
-```bash
-curl -O https://raw.githubusercontent.com/moremay/docker-php/refs/heads/master/phpcs
-chmod u+x phpcs
-./phpcs --usage
-./phpcs [--volume list] [-p] .|<path/to/php/files> [--standard PHPCompatibility[,...]] [--version ver_min[-[ver_max]]] [PHP CodeSniffer options]
-```
-
 [PHP CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) installed coding standards
 
-```shell
-./phpcs -i
+`phpcs/phpcs.sh`使用目标目录或文件所在目录的 phpcs.xml，如果没有则使用phpcs目录的默认 phpcs.xml。默认 phpcs.xml 测试与php8.4的兼容性（忽略了mcrypt）。
+
+命令行参数将覆盖 phpcs.xml 的设置。
+
+```bash
+cd phpcs
+./phpcs.sh --usage
+./phpcs.sh [-v|--volume list] [-p .]|<-p path/to/php-dir-or-file> [PHP CodeSniffer options]
 ```
 
 ## Extensions

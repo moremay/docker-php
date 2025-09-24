@@ -3,7 +3,7 @@ ARG mirrors=
 ARG gnu_mirrors=http://ftp.gnu.org/pub/gnu
 ARG TZ=
 
-FROM php:8.4-fpm-alpine
+FROM alpine:3.22 AS builder
 
 ARG mirrors
 ARG gnu_mirrors
@@ -15,11 +15,123 @@ RUN if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi
 
+RUN apk add --no-cache curl
+
+ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
+ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+ENV PHP_CPPFLAGS="$PHP_CFLAGS"
+ENV PHP_LDFLAGS="-Wl,-O1 -pie"
+
+RUN set -ex; \
+	docker-lib download php \
+		"https://www.php.net/distributions/php-8.4.12.tar.xz" \
+		"c1b7978cbb5054eed6c749bde4444afc16a3f2268101fb70a7d5d9b1083b12ad"
+
 ENV TZ=${TZ:-Asia/Shanghai}
+ENV PHP_VERSION=8.4.12
+ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
+	. docker-lib php-init \
+		argon2-dev \
+		coreutils \
+		gnu-libiconv-dev \
+		libsodium-dev \
+		libxml2-dev \
+		linux-headers \
+		oniguruma-dev \
+		openssl-dev \
+		readline-dev \
+		sqlite-dev \
+		; \
+	rm -vf /usr/include/iconv.h; \
+	\
+	mkdir -p "$PHP_INI_DIR/conf.d"; \
+	cp -v php.ini-* "$PHP_INI_DIR/"; \
+	export \
+		CFLAGS="$PHP_CFLAGS" \
+		CPPFLAGS="$PHP_CPPFLAGS" \
+		LDFLAGS="$PHP_LDFLAGS" \
+	; \
+	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
+	./configure \
+		--with-config-file-path="$PHP_INI_DIR" \
+		--with-config-file-scan-dir="$PHP_INI_DIR/conf.d" \
+		--build="$gnuArch" \
+		--enable-option-checking=fatal \
+		--disable-cgi \
+		--disable-phpdbg \
+		--enable-fpm \
+		--with-fpm-user=www-data \
+		--with-fpm-group=www-data \
+		\
+		--enable-mbregex \
+		--enable-mbstring \
+		--enable-mysqlnd \
+		--with-mhash \
+		--with-pic \
+		--with-password-argon2 \
+		--with-sodium=shared \
+		\
+		--with-pdo-sqlite=/usr \
+		--with-sqlite3=/usr \
+		\
+		--with-iconv=/usr \
+		--with-libxml \
+		--with-openssl \
+		--with-pear \
+		--with-readline \
+		--with-zlib \
+	; \
+	docker-lib make; \
+	\
+	docker-php-ext-enable \
+		sodium \
+		opcache \
+	; \
+	\
+	php -v
+
+RUN set -eux; \
+	mkdir -p /usr/local/etc/php-fpm.d "$(php -r "echo ini_get('extension_dir');")"; \
+	cd /usr/local/etc; \
+	# /usr/local/etc
+	cp php-fpm.conf.default php-fpm.d/www.conf; \
+	{ \
+		echo '[global]'; \
+		echo 'include=etc/php-fpm.d/*.conf'; \
+	} | tee php-fpm.conf; \
+	# /usr/local/etc/php-fpm.d
+	{ \
+		echo '[global]'; \
+		echo 'error_log = /proc/self/fd/2'; \
+		echo '; https://github.com/docker-library/php/pull/725#issuecomment-443540114'; \
+		echo 'log_limit = 8192'; \
+		echo; \
+		echo '[www]'; \
+		echo '; php-fpm closes STDOUT on startup, so sending logs to /proc/self/fd/1 does not work.'; \
+		echo '; https://bugs.php.net/bug.php?id=73886'; \
+		echo 'access.log = /proc/self/fd/2'; \
+		echo; \
+		echo 'clear_env = no'; \
+		echo; \
+		echo '; Ensure worker stdout and stderr are sent to the main error log.'; \
+		echo 'catch_workers_output = yes'; \
+		echo 'decorate_workers_output = no'; \
+	} | tee php-fpm.d/docker.conf; \
+	{ \
+		echo '[global]'; \
+		echo 'daemonize = no'; \
+		echo; \
+		echo '[www]'; \
+		echo 'listen = 9000'; \
+	} | tee php-fpm.d/zz-docker.conf; \
 	# /usr/local/etc/php
 	cd "$PHP_INI_DIR"; \
+	{ \
+		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
+		echo 'fastcgi.logging = Off'; \
+	} > "conf.d/docker-fpm.ini"; \
 	{ \
 		echo '[Date]'; \
 		echo 'date.timezone = ${TZ}'; \
@@ -28,6 +140,7 @@ RUN set -eux; \
 RUN set -eux; \
 	. docker-lib php-init \
 		bzip2-dev \
+		curl-dev \
 		freetype-dev \
 		gettext-dev \
 		gmp-dev \
@@ -54,8 +167,7 @@ RUN set -eux; \
 		"ae32b224a843df303d61bffbf38ce325e0ca6117b92a974a101a6729d1ce5fea" \
 		tar; \
 	\
-	docker-php-ext-configure \
-		gd \
+	docker-php-ext-configure gd \
 		--with-avif \
 		--with-freetype \
 		--with-jpeg \
@@ -70,6 +182,7 @@ RUN set -eux; \
 	docker-php-ext-install \
 		bcmath \
 		bz2 \
+		curl \
 		exif \
 		gd \
 		gettext \
@@ -96,3 +209,18 @@ RUN set -eux; \
 	chmod +x "$FILE_PATH"; \
 	\
 	composer --version
+
+RUN set -eux; \
+	adduser -u 82 -D -S -G www-data www-data; \
+	mkdir -p /var/www/html; \
+	chown www-data:www-data /var/www/html; \
+	chmod 1777 /var/www/html
+
+WORKDIR /var/www/html
+ENTRYPOINT ["docker-php-entrypoint"]
+CMD ["php-fpm"]
+EXPOSE 9000
+
+# Override stop signal to stop process gracefully
+# https://github.com/php/php-src/blob/17baa87faddc2550def3ae7314236826bc1b1398/sapi/fpm/php-fpm.8.in#L163
+STOPSIGNAL SIGQUIT

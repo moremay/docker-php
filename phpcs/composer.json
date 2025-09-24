@@ -1,0 +1,18 @@
+{
+    "repositories": [
+        {
+            "type": "path",
+            "url": "./packages/phpcompatibility-pecl-mcrypt"
+        }
+    ],
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.7",
+        "phpcompatibility/phpcompatibility-all": "*",
+        "moremay/phpcompatibility-pecl-mcrypt": "*"
+    }
+}

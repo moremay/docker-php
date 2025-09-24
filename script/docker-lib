@@ -151,7 +151,7 @@ prune() {
         remove_src="$SRC_DIR"
     fi
     # 注意：$remove_src 不应该被引号包裹，以便通配符能够展开
-    rm -rf "${TARGET}/share/"*doc/* "${TARGET}/share/man/"* /tmp/* $remove_src
+    rm -rf "${TARGET}/share/"*doc/* "${TARGET}/share/man/"* ~/.pearrc /tmp/* $remove_src
 
     if [ -z "${keep_symbols}" ] && [ -f "$FILE_LIST-make" ]; then
         cat "$FILE_LIST-make" | tr '\n' '\0' | xargs -r0 strip --strip-all 2>/dev/null || :
