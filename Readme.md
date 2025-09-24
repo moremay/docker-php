@@ -20,7 +20,7 @@ Build images for php-fpm.
   php 5: 2.2.25; php 7.4, 8.4: Latest 2.8.11
 
 ```shell
-build.sh [[-v|--ver ]ver-dir-name] [-c|--composer] [-p] [--ali]
+build.sh [[-v|--ver ]ver-dir-name] [-p] [--ali]
   --ali           for os mirrors. Set args: mirrors=mirrors.aliyun.com gnu_mirrors=https://mirrors.aliyun.com/gnu
   -p              push
   -v, --ver VER[-PLAT]  dirname.
