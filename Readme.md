@@ -17,7 +17,7 @@ Build images for php-fpm.
   + pgsql &nbsp;&nbsp; php 8
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
-  php 5: 2.2.25; php 7.4, 8.4: Latest 2.8.11
+  php 5: 2.2.25; php 7.4, 8.4: Latest
 
 ```shell
 build.sh [[-v|--ver ]ver-dir-name] [-p] [--ali]
