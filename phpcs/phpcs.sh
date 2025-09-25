@@ -70,4 +70,4 @@ else
 fi
 
 set -x
-docker run --rm -it -v "$phpdir":/www/ -v "$bindir":/phpcs/ "${volumes[@]}" moremay/php:8.4 /phpcs/vendor/bin/phpcs "/www$phpfile" "${params[@]}"
+docker run --rm -it -v "$phpdir":/www/ -v "$bindir":/phpcs/ "${volumes[@]}" moremay/php:8 /phpcs/vendor/bin/phpcs "/www$phpfile" "${params[@]}"

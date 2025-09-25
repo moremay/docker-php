@@ -18,16 +18,6 @@ jobs:
         password: ${{ secrets.DOCKER_TOKEN }}
 
     - name: Build and push
-      uses: docker/build-push-action@v4
-      with:
-        context: ./8.4
-        file: ./8.4/Dockerfile
-        push: true
-        tags: |
-          moremay/php:8.4
-          moremay/php:8.4-alpine
-
-    - name: Build composer
       shell: bash
       run: |
-        ./build.sh 8.4 --composer -p
+        ./build.sh 8.4 -p

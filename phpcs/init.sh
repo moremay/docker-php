@@ -3,7 +3,7 @@
 set -e
 
 if [ $# -eq 0 ]; then
-    docker run --rm -it -v .:/phpcs/ moremay/php:8.4 /bin/sh -c "/phpcs/init.sh init"
+    docker run --rm -it -v .:/phpcs/ moremay/php:8 /bin/sh -c "/phpcs/init.sh init"
 else
     cd /phpcs
 

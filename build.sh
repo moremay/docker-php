@@ -76,6 +76,10 @@ else
   else
     images=("${image_name}:$ver-$plat")
   fi
+
+  if [ -f .latest ]; then
+      images=("${images[@]}" "${image_name}:${ver%%.*}")
+  fi
 fi
 
 names=()

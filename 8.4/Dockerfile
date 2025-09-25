@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.4
 ARG mirrors=
 ARG gnu_mirrors=http://ftp.gnu.org/pub/gnu
 ARG TZ=
