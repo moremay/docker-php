@@ -23,11 +23,11 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -ex; \
 	docker-lib download php \
-		"https://www.php.net/distributions/php-8.4.12.tar.xz" \
-		"c1b7978cbb5054eed6c749bde4444afc16a3f2268101fb70a7d5d9b1083b12ad"
+		"https://www.php.net/distributions/php-8.4.13.tar.xz" \
+		"b4f27adf30bcf262eacf93c78250dd811980f20f3b90d79a3dc11248681842df"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.4.12
+ENV PHP_VERSION=8.4.13
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \

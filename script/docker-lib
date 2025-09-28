@@ -171,14 +171,14 @@ prune() {
         run_deps=$(echo "$run_deps" | grep -v -s -F -f /usr/src/deps.txt || :)
     fi
     if [ -n "$run_deps" ]; then
-        echo "=== $(basename "$SRC_DIR") deps:"
-        echo "$run_deps" | tee -a /usr/src/deps.txt
-        echo "==="
-
+        {
+            echo "### $(basename "$SRC_DIR") deps:"
+            echo "$run_deps"
+        } | tee -a /usr/src/deps.txt
         apk add --no-cache $run_deps
     fi
 
-    rm -f "$FILE_LIST-make" "$FILE_LIST-dev"
+    rm -f "$FILE_LIST"*
 
     if [ -z "${keep_dev}" ]; then
         docker-php-source delete

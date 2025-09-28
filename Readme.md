@@ -6,6 +6,11 @@ Thank [docker-library/php](https://github.com/docker-library/php) [Alpine](https
 
 Build images for php-fpm.
 
++ php
+  + php 5.3.29
+  + php 5.6.40
+  + php 7.4.33
+  + php 8.4.13 2025-09-25
 + ext. :
   + add shared :
   bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, redis, sockets, sodium, timezonedb, xsl, zip
@@ -17,7 +22,7 @@ Build images for php-fpm.
   + pgsql &nbsp;&nbsp; php 8
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
-  php 5: 2.2.25; php 7.4, 8.4: Latest
+  php 5: 2.2.25; php 7.4, 8.4: latest
 
 ```shell
 build.sh [[-v|--ver ]ver-dir-name] [-p] [--ali]

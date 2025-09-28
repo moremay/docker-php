@@ -76,7 +76,7 @@ RUN set -ex; \
 		"8438c2f14ab8f3d6cd2495aa37de7b559e33b610f9ab264f0c61b531bf0c262d"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=5.6.40
+ENV PHP_VERSION=5.3.29
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
