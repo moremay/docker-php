@@ -61,49 +61,38 @@ usage() {
 TARGET="${TARGET:-/usr/local}"
 export TARGET
 
-# $FILE_LIST-dev  安装的开发包文件包括符号链接。文件名。
-# $FILE_LIST-make 编译的可执行文件不含符号链接。路径及文件名。
-# $FILE_LIST-a    保留的*.a。
-FILE_LIST=/usr/src/news-latest
+# $FILE_LIST-sys    系统中已经存在的运行/库文件、符号链接。
+# $FILE_LIST-apk    安装开发包后的运行/库文件、符号链接。
+# $FILE_LIST-dev    开发包引入的运行/库文件、链接名称。
+# $FILE_LIST-make   编译的可执行/库文件，不含符号链接。
+# $FILE_LIST-a      保留的*.a。
+FILE_LIST=/usr/src/latest
+MAKE_LOG=/usr/src/make
 
 x_before() {
-    local counter=1
-    if [ -f /usr/src/.counter ]; then
-        counter="$(cat /usr/src/.counter)"
-        counter=$((counter + 1))
-    fi
-    echo "$counter" > /usr/src/.counter
-    find "$TARGET" \( -type f -o -type l \) \( -perm '/0111' -o -name "*.so" -o -name "*.so.*" \) |
-        sort -u > "/usr/src/$counter-before"
+    # prev make has --keep-dev
+    test -f "$FILE_LIST-sys" && return 0
+    find \( -path "$TARGET" -o -path /usr/lib \) \( -type f -o -type l \) \( -perm '/0111' -o -name "*.so" -o -name "*.so.*" \) |
+        sort -u > "$FILE_LIST-sys"
 }
 
 x_dev() {
-    if ! [ -f /usr/src/.counter ]; then
-        return
-    fi
-    local counter
-    counter="$(cat /usr/src/.counter)"
-
-    # 查找范围不小于 x_after
+    # prev make has --keep-dev
+    test -f "$FILE_LIST-dev" && return 0
+    # 查找范围不小于 x_after ?
     find "$TARGET" \( -type f -o -type l \) \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) |
-        sort -u > "/usr/src/$counter-dev"
-    comm -13 "/usr/src/$counter-before" "/usr/src/$counter-dev" | \
-        awk -F/ '{print $NF}' | sort -u > "$FILE_LIST-dev"
+        sort -u > "$FILE_LIST-apk"
+    comm -13 "$FILE_LIST-sys" "$FILE_LIST-apk" | awk -F/ '{print $NF}' | sort -u > "$FILE_LIST-dev"
 }
 
 x_after() {
-    if ! [ -f /usr/src/.counter ]; then
-        return
-    fi
-    local counter
-    counter="$(cat /usr/src/.counter)"
-    name="$(basename "$(pwd)")"
-
     # 文件用于 scanelf 和 strip 及下一步可能需要的静态库，排除符号链接。
-    find "$TARGET" -type f \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) | sort -u > "/usr/src/$counter-after"
-    comm -13 "/usr/src/$counter-dev" "/usr/src/$counter-after" > "/usr/src/news-$counter-${name}"
-    ln -sf "/usr/src/news-$counter-${name}" "$FILE_LIST-make"
-    rm -f "/usr/src/$counter-"*
+    find "$TARGET" -type f \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) | sort -u > "$FILE_LIST-make.tmp"
+    comm -13 "$FILE_LIST-apk" "$FILE_LIST-make.tmp" > "$FILE_LIST-make"
+    {
+        echo "### $(basename "$(pwd)")"
+        cat "$FILE_LIST-make"
+    } | tee -a "$MAKE_LOG-news"
 }
 
 apk_add() {
@@ -138,8 +127,6 @@ prune() {
         shift
     done
 
-    x_after
-
     local SRC_DIR
     SRC_DIR="$(pwd)"
     local remove_src
@@ -152,6 +139,10 @@ prune() {
     fi
     # 注意：$remove_src 不应该被引号包裹，以便通配符能够展开
     rm -rf "${TARGET}/share/"*doc/* "${TARGET}/share/man/"* ~/.pearrc /tmp/* $remove_src
+
+    [ -n "${keep_dev}" ] && return 0
+
+    x_after
 
     if [ -z "${keep_symbols}" ] && [ -f "$FILE_LIST-make" ]; then
         cat "$FILE_LIST-make" | tr '\n' '\0' | xargs -r0 strip --strip-all 2>/dev/null || :
@@ -167,35 +158,33 @@ prune() {
 
     local run_deps
     run_deps="$(need_deps)"
-    if [ -n "$run_deps" ] && [ -f /usr/src/deps.txt ]; then
-        run_deps=$(echo "$run_deps" | grep -v -s -F -f /usr/src/deps.txt || :)
+    if [ -n "$run_deps" ] && [ -f "$MAKE_LOG-deps" ]; then
+        run_deps=$(echo "$run_deps" | grep -v -s -F -f "$MAKE_LOG-deps" || :)
     fi
     if [ -n "$run_deps" ]; then
         {
             echo "### $(basename "$SRC_DIR") deps:"
             echo "$run_deps"
-        } | tee -a /usr/src/deps.txt
+        } | tee -a "$MAKE_LOG-deps"
         apk add --no-cache $run_deps
     fi
 
     rm -f "$FILE_LIST"*
 
-    if [ -z "${keep_dev}" ]; then
-        docker-php-source delete
-        apk del --no-network .phpize-deps
-    fi
+    docker-php-source delete
+    apk del --no-network .phpize-deps
 }
 
 need_deps() {
-    local lib_list
+    local lib_names
     local deps_all
     local deps_list
     local deps_temp
 
-    lib_list=$(find "$TARGET" -name "*.so*" \( -type f -o -type l \) 2>/dev/null | \
+    lib_names=$(find "$TARGET" -name "*.so*" \( -type f -o -type l \) 2>/dev/null | \
             awk -F/ '{print $NF}' | sort -u)
-    if [ -f "$FILE_LIST-dev" ] && [ -n "$lib_list" ]; then
-        lib_list=$(echo "$lib_list" | grep -v -s -F -f "$FILE_LIST-dev" || :)
+    if [ -f "$FILE_LIST-dev" ] && [ -n "$lib_names" ]; then
+        lib_names=$(echo "$lib_names" | grep -v -s -F -f "$FILE_LIST-dev" || :)
     fi
 
     deps_temp=$(
@@ -209,7 +198,7 @@ need_deps() {
         } |
         tr ',' '\n' | sort -u)
 
-    deps_list=$(comm -13 <(echo "$lib_list" | sort -u) <(echo "$deps_temp"))
+    deps_list=$(comm -13 <(echo "$lib_names" | sort -u) <(echo "$deps_temp"))
 
     cd /usr/lib
 

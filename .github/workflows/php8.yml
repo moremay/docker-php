@@ -20,4 +20,4 @@ jobs:
     - name: Build and push
       shell: bash
       run: |
-        ./build.sh 8.4 -p
+        ./build.sh 8.4 -ali -p

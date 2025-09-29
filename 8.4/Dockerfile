@@ -92,14 +92,22 @@ RUN set -eux; \
 	php -v
 
 RUN set -eux; \
-	mkdir -p /usr/local/etc/php-fpm.d "$(php -r "echo ini_get('extension_dir');")"; \
+	mkdir -p "$(php -r "echo ini_get('extension_dir');")"; \
 	cd /usr/local/etc; \
 	# /usr/local/etc
-	cp php-fpm.conf.default php-fpm.d/www.conf; \
-	{ \
-		echo '[global]'; \
-		echo 'include=etc/php-fpm.d/*.conf'; \
-	} | tee php-fpm.conf; \
+	if [ -d php-fpm.d ]; then \
+		# for some reason, upstream's php-fpm.conf.default has "include=NONE/etc/php-fpm.d/*.conf"
+		sed 's!=NONE/!=!g' php-fpm.conf.default | tee php-fpm.conf > /dev/null; \
+		cp php-fpm.d/www.conf.default php-fpm.d/www.conf; \
+	else \
+		# PHP 5.x doesn't use "include=" by default, so we'll create our own simple config that mimics PHP 7+ for consistency
+		mkdir php-fpm.d; \
+		cp php-fpm.conf.default php-fpm.d/www.conf; \
+		{ \
+			echo '[global]'; \
+			echo 'include=etc/php-fpm.d/*.conf'; \
+		} | tee php-fpm.conf; \
+	fi; \
 	# /usr/local/etc/php-fpm.d
 	{ \
 		echo '[global]'; \
@@ -208,6 +216,21 @@ RUN set -eux; \
 	chmod +x "$FILE_PATH"; \
 	\
 	composer --version
+
+FROM scratch
+
+ARG TZ
+
+ENV TZ=${TZ:-Asia/Shanghai}
+ENV PHP_VERSION=8.4.13
+ENV PHP_INI_DIR=/usr/local/etc/php
+
+ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
+ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+ENV PHP_CPPFLAGS="$PHP_CFLAGS"
+ENV PHP_LDFLAGS="-Wl,-O1 -pie"
+
+COPY --from=builder / /
 
 RUN set -eux; \
 	adduser -u 82 -D -S -G www-data www-data; \
