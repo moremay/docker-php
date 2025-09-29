@@ -132,14 +132,11 @@ RUN set -eux; \
 	php -v
 
 RUN set -eux; \
-	mkdir -p /usr/local/etc/php-fpm.d "$(php -r "echo ini_get('extension_dir');")"; \
+	mkdir -p "$(php -r "echo ini_get('extension_dir');")"; \
 	cd /usr/local/etc; \
 	# /usr/local/etc
-	cp php-fpm.conf.default php-fpm.d/www.conf; \
-	{ \
-		echo '[global]'; \
-		echo 'include=etc/php-fpm.d/*.conf'; \
-	} | tee php-fpm.conf; \
+	sed 's!=NONE/!=!g' php-fpm.conf.default | tee php-fpm.conf > /dev/null; \
+	cp php-fpm.d/www.conf.default php-fpm.d/www.conf; \
 	# /usr/local/etc/php-fpm.d
 	{ \
 		echo '[global]'; \
