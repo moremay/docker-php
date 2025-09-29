@@ -61,7 +61,7 @@ usage() {
 TARGET="${TARGET:-/usr/local}"
 export TARGET
 
-# $FILE_LIST-sys    系统中已经存在的运行/库文件、符号链接。
+# $FILE_LIST-sys    系统中已经存在的库文件、符号链接。
 # $FILE_LIST-apk    安装开发包后的运行/库文件、符号链接。
 # $FILE_LIST-dev    开发包引入的运行/库文件、链接名称。
 # $FILE_LIST-make   编译的可执行/库文件，不含符号链接。
@@ -72,7 +72,7 @@ MAKE_LOG=/usr/src/make
 x_before() {
     # prev make has --keep-dev
     test -f "$FILE_LIST-sys" && return 0
-    find \( -path "$TARGET" -o -path /usr/lib \) \( -type f -o -type l \) \( -perm '/0111' -o -name "*.so" -o -name "*.so.*" \) |
+    find /usr \( -type f -o -type l \) \( -perm '/0111' -o -name "*.so" -o -name "*.so.*" \) |
         sort -u > "$FILE_LIST-sys"
 }
 
@@ -80,7 +80,7 @@ x_dev() {
     # prev make has --keep-dev
     test -f "$FILE_LIST-dev" && return 0
     # 查找范围不小于 x_after ?
-    find "$TARGET" \( -type f -o -type l \) \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) |
+    find /usr \( -type f -o -type l \) \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) |
         sort -u > "$FILE_LIST-apk"
     comm -13 "$FILE_LIST-sys" "$FILE_LIST-apk" | awk -F/ '{print $NF}' | sort -u > "$FILE_LIST-dev"
 }
@@ -90,7 +90,7 @@ x_after() {
     find "$TARGET" -type f \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) | sort -u > "$FILE_LIST-make.tmp"
     comm -13 "$FILE_LIST-apk" "$FILE_LIST-make.tmp" > "$FILE_LIST-make"
     {
-        echo "### $(basename "$(pwd)")"
+        echo "###"
         cat "$FILE_LIST-make"
     } | tee -a "$MAKE_LOG-news"
 }
@@ -179,15 +179,15 @@ need_deps() {
     local lib_names
     local deps_all
     local deps_list
-    local deps_temp
 
     lib_names=$(find "$TARGET" -name "*.so*" \( -type f -o -type l \) 2>/dev/null | \
             awk -F/ '{print $NF}' | sort -u)
     if [ -f "$FILE_LIST-dev" ] && [ -n "$lib_names" ]; then
         lib_names=$(echo "$lib_names" | grep -v -s -F -f "$FILE_LIST-dev" || :)
+        lib_names=$(echo "$lib_names" | sort -u)
     fi
 
-    deps_temp=$(
+    deps_list=$(
         {
             if [ -f "$FILE_LIST-make" ]; then
                 cat "$FILE_LIST-make" | tr '\n' '\0' |
@@ -197,8 +197,7 @@ need_deps() {
             fi
         } |
         tr ',' '\n' | sort -u)
-
-    deps_list=$(comm -13 <(echo "$lib_names" | sort -u) <(echo "$deps_temp"))
+    deps_list=$(comm -13 <(echo "$lib_names") <(echo "$deps_list"))
 
     cd /usr/lib
 
@@ -206,10 +205,11 @@ need_deps() {
     while [ -n "$deps_list" ]; do
         deps_all=$(echo -e "$deps_all\n$deps_list" | sort -u)
 
-        deps_temp=$(echo "$deps_list" | tr '\n' '\0' |
+        deps_list=$(echo "$deps_list" | tr '\n' '\0' |
                     xargs -0r -n 8 scanelf --needed --nobanner --format '%n#p' |
                     tr ',' '\n' | sort -u)
-        deps_list=$(comm -13 <(echo "$deps_all") <(echo "$deps_temp"))
+        deps_list=$(comm -13 <(echo "$deps_all") <(echo "$deps_list") | sort -u)
+        deps_list=$(comm -13 <(echo "$lib_names") <(echo "$deps_list"))
     done
 
     echo "$deps_all" | awk 'NF && $1 != "" {print "so:" $1}'
