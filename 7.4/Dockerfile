@@ -21,7 +21,6 @@ ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -eux; \
-	apk add --no-cache --virtual .init curl; \
 	. docker-lib init "curl" \
 		"https://curl.se/download/curl-8.16.0.tar.xz" \
 		"40c8cddbcb6cc6251c03dea423a472a6cea4037be654ba5cf5dec6eb2d22ff1d" \
@@ -45,8 +44,7 @@ RUN set -eux; \
 		--enable-websockets \
 		--without-libssh2 \
 		; \
-	docker-lib make; \
-	apk del --no-network .init
+	docker-lib make
 
 RUN set -eux; \
 	. docker-lib init 'openssl-1.1' \
@@ -162,16 +160,17 @@ RUN set -eux; \
 		echo '[www]'; \
 		echo 'listen = 9000'; \
 	} | tee php-fpm.d/zz-docker.conf; \
-	# /usr/local/etc/php
-	cd "$PHP_INI_DIR"; \
+	# /usr/local/etc/php/conf.d
+	cd "$PHP_INI_DIR/conf.d"; \
 	{ \
 		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
 		echo 'fastcgi.logging = Off'; \
-	} > "conf.d/docker-fpm.ini"; \
+	} > "docker-fpm.ini"; \
 	{ \
 		echo '[Date]'; \
 		echo 'date.timezone = ${TZ}'; \
-	} > "conf.d/timezone.ini"
+	} > "timezone.ini"; \
+	echo "expose_php = Off" > disable-x-powered-by.ini
 
 RUN set -eux; \
 	. docker-lib php-init \
@@ -238,6 +237,21 @@ RUN set -eux; \
 	chmod +x "$FILE_PATH"; \
 	\
 	composer --version
+
+FROM scratch
+
+ARG TZ
+
+ENV TZ=${TZ:-Asia/Shanghai}
+ENV PHP_VERSION=7.4.33
+ENV PHP_INI_DIR=/usr/local/etc/php
+
+ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
+ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
+ENV PHP_CPPFLAGS="$PHP_CFLAGS"
+ENV PHP_LDFLAGS="-Wl,-O1 -pie"
+
+COPY --from=builder / /
 
 RUN set -eux; \
 	adduser -u 82 -D -S -G www-data www-data; \

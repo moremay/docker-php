@@ -122,16 +122,17 @@ RUN set -eux; \
 		echo '[www]'; \
 		echo 'listen = 9000'; \
 	} | tee php-fpm.d/zz-docker.conf; \
-	# /usr/local/etc/php
-	cd "$PHP_INI_DIR"; \
+	# /usr/local/etc/php/conf.d
+	cd "$PHP_INI_DIR/conf.d"; \
 	{ \
 		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
 		echo 'fastcgi.logging = Off'; \
-	} > "conf.d/docker-fpm.ini"; \
+	} > "docker-fpm.ini"; \
 	{ \
 		echo '[Date]'; \
 		echo 'date.timezone = ${TZ}'; \
-	} > "conf.d/timezone.ini"
+	} > "timezone.ini"; \
+	echo "expose_php = Off" > disable-x-powered-by.ini
 
 RUN set -eux; \
 	. docker-lib php-init \

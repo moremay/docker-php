@@ -25,12 +25,12 @@ usage() {
     echo "        下载并解压tar压缩包，进入目录，并安装构建依赖。"
     echo "        Download and extract a tarball, enter directory, and install build dependencies."
     echo ""
-    echo "    make [test] [dev] [static] [no-strip]"
+    echo "    make [test] [--keep-dev] [--keep-static] [--no-strip]"
     echo "        编译并安装当前目录下的项目，然后进行清理和依赖优化。"
     echo "        Compile and install the project in current directory, then clean up and optimize dependencies."
     echo "        ---"
     echo "        test     Run make test."
-    echo "        [dev] [static] [no-strip] see prune."
+    echo "        [--keep-dev] [--keep-static] [--no-strip] see prune."
     echo ""
     echo "    patch <url>..."
     echo "        下载并应用补丁(.patch 文件)。"
@@ -40,13 +40,13 @@ usage() {
     echo "        提取 PHP 源码并安装构建依赖（用于 PHP 扩展编译）。"
     echo "        Extract PHP source and install build dependencies (for PHP extension compilation)."
     echo ""
-    echo "    prune [dev] [static] [no-strip]"
+    echo "    prune [--keep-dev] [--keep-static] [--no-strip]"
     echo "        清理临时文件、文档、静态库等，并安装运行时依赖。make会自动调用。"
     echo "        Clean up temporary files, documentation, static libraries, etc., and install runtime dependencies. Automatically called by make."
     echo "        ---"
-    echo "        dev      保留开发包。the development package is retained."
-    echo "        static   保留链接库。the *.a is retained."
-    echo "        no-strip 保留文件的符号表。the symbols and sections is retained."
+    echo "        --keep-dev     同一RUN多次make时保留开发包。One RUN multi-step make, the development package is retained."
+    echo "        --keep-static  保留链接库。the *.a is retained."
+    echo "        --no-strip     保留文件的符号表。the symbols and sections is retained."
     echo ""
     echo "init/php-init 使用 source ./docker-lib.sh ... 在当前 shell 运行。"
     echo "init/php-init should be run in the current shell using: source ./docker-lib.sh ..."
@@ -61,34 +61,34 @@ usage() {
 TARGET="${TARGET:-/usr/local}"
 export TARGET
 
-# $FILE_LIST-sys    系统中已经存在的库文件、符号链接。
-# $FILE_LIST-apk    安装开发包后的运行/库文件、符号链接。
-# $FILE_LIST-dev    开发包引入的运行/库文件、链接名称。
+# $FILE_LIST-base   系统中已经存在的库文件、符号链接。
+# $FILE_LIST-exists 同上，仅文件名。
+# $FILE_LIST-apk    安装开发包后的库文件、符号链接。
+# $FILE_LIST-dev    开发包引入的库文件、链接名称。
 # $FILE_LIST-make   编译的可执行/库文件，不含符号链接。
 # $FILE_LIST-a      保留的*.a。
-FILE_LIST=/usr/src/latest
+FILE_LIST=/usr/src/cur-make
 MAKE_LOG=/usr/src/make
 
 x_before() {
-    # prev make has --keep-dev
-    test -f "$FILE_LIST-sys" && return 0
-    find /usr \( -type f -o -type l \) \( -perm '/0111' -o -name "*.so" -o -name "*.so.*" \) |
-        sort -u > "$FILE_LIST-sys"
+    mkdir -p /usr/src
+    find /usr \( -type f -o -type l \) \( -name "*.so" -o -name "*.so.*" \) |
+        sort -u | tee "$FILE_LIST-base" | awk -F/ '{print $NF}' | sort -u > "$FILE_LIST-exists"
 }
 
 x_dev() {
-    # prev make has --keep-dev
-    test -f "$FILE_LIST-dev" && return 0
     # 查找范围不小于 x_after ?
+    # -perm '/0111' 是为了从 $FILE_LIST-make 中排除已有的可执行文件
     find /usr \( -type f -o -type l \) \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) |
         sort -u > "$FILE_LIST-apk"
-    comm -13 "$FILE_LIST-sys" "$FILE_LIST-apk" | awk -F/ '{print $NF}' | sort -u > "$FILE_LIST-dev"
+    comm -13 "$FILE_LIST-base" "$FILE_LIST-apk" | grep "\.so$\|\.so\." | awk -F/ '{print $NF}' | sort -u > "$FILE_LIST-dev"
 }
 
 x_after() {
+    local found
     # 文件用于 scanelf 和 strip 及下一步可能需要的静态库，排除符号链接。
-    find "$TARGET" -type f \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) | sort -u > "$FILE_LIST-make.tmp"
-    comm -13 "$FILE_LIST-apk" "$FILE_LIST-make.tmp" > "$FILE_LIST-make"
+    found=$(find "$TARGET" -type f \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) | sort -u)
+    comm -13 "$FILE_LIST-apk" <(echo "$found") > "$FILE_LIST-make"
     {
         echo "###"
         cat "$FILE_LIST-make"
@@ -96,9 +96,12 @@ x_after() {
 }
 
 apk_add() {
-    x_before
-    apk add --no-cache --virtual .phpize-deps $PHPIZE_DEPS "$@"
-    x_dev
+    # prev make no --keep-dev
+    if [ ! -f "$FILE_LIST-base" ]; then
+        x_before
+        apk add --no-cache --virtual .phpize-deps $PHPIZE_DEPS "$@"
+        x_dev
+    fi
 
     PKG_CONFIG_PATH=$(find /usr -name "*.pc" -type f | grep -v "${PKG_IGNORE:-ssl1}" |
         tr '\n' '\0' | xargs -r0 -n 1 dirname | sort -u | awk 'NF && $1 != "" {printf(":%s",$0)}')
@@ -114,13 +117,13 @@ prune() {
 
     while [ $# -gt 0 ]; do
         case "$1" in
-        dev | --keep-dev)
+        --keep-dev)
             keep_dev=yes
             ;;
-        static | --keep-static)
+        --keep-static)
             keep_a=yes
             ;;
-        no-strip | --no-strip)
+        --no-strip)
             keep_symbols=yes
             ;;
         esac
@@ -142,6 +145,7 @@ prune() {
 
     [ -n "${keep_dev}" ] && return 0
 
+    # 同一RUN多次make, TARGET 应当一致。最后一次prune再统一去符号找依赖。
     x_after
 
     if [ -z "${keep_symbols}" ] && [ -f "$FILE_LIST-make" ]; then
@@ -149,9 +153,9 @@ prune() {
     fi
 
     touch "$FILE_LIST-a"
-    if [ -n "${keep_a}" ]; then
-        cat "$FILE_LIST-a" "$FILE_LIST-make" | grep ".a$" | sort -u > "$FILE_LIST-a.tmp"
-        mv "$FILE_LIST-a.tmp" "$FILE_LIST-a"
+    if [ -n "${keep_a}" ] && [ -f "$FILE_LIST-make" ]; then
+        grep -h ".a$" "$FILE_LIST-a" "$FILE_LIST-make" | sort -u > "$FILE_LIST-a.tmp"
+        mv -f "$FILE_LIST-a.tmp" "$FILE_LIST-a"
     fi
     comm -13 "$FILE_LIST-a" <(find "$TARGET" -type f -name "*.a" | sort -u) |
         tr '\n' '\0' | xargs -r0 rm -f
@@ -169,7 +173,7 @@ prune() {
         apk add --no-cache $run_deps
     fi
 
-    rm -f "$FILE_LIST"*
+    rm -f "$FILE_LIST-"*
 
     docker-php-source delete
     apk del --no-network .phpize-deps
@@ -181,11 +185,14 @@ need_deps() {
     local deps_list
 
     lib_names=$(find "$TARGET" -name "*.so*" \( -type f -o -type l \) 2>/dev/null | \
-            awk -F/ '{print $NF}' | sort -u)
+            awk -F/ '{print $NF}')
     if [ -f "$FILE_LIST-dev" ] && [ -n "$lib_names" ]; then
         lib_names=$(echo "$lib_names" | grep -v -s -F -f "$FILE_LIST-dev" || :)
-        lib_names=$(echo "$lib_names" | sort -u)
     fi
+    lib_names=$({
+        echo "$lib_names"
+        test -f "$FILE_LIST-exists" && cat "$FILE_LIST-exists"
+        } | sort -u)
 
     deps_list=$(
         {
@@ -275,9 +282,23 @@ main() {
             download "$@"
             ;;
         init)
-            download "$2" "$3" "$4" tar
+            if [ $# -lt 4 ]; then
+                usage
+                return 1
+            fi
+
+            local LIB_PATH="$2"
+            local LIB_URL="$3"
+            local LIB_SHA256="$4"
             shift 4
-            apk_add "$@"
+
+            if command -v curl >/dev/null; then
+                apk_add "$@"
+            else
+                apk_add curl "$@"
+            fi
+
+            download "$LIB_PATH" "$LIB_URL" "$LIB_SHA256" tar
             ;;
         php-init)
             docker-php-source extract
