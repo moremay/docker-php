@@ -69,15 +69,7 @@ if [ -x "tags.sh" ]; then
   images=($(./tags.sh))
 else
   image_name="php"
-  plat="${ver/*-/}"
-  ver="${ver/-*/}"
-  [ "$plat" == "$ver" ] && plat=
-
-  if [ "$plat" == "" ]; then
-    images=("${image_name}:$ver" "${image_name}:$ver-alpine")
-  else
-    images=("${image_name}:$ver-$plat")
-  fi
+  images=("${image_name}:$ver")
 
   if [ -f .latest ]; then
       images=("${images[@]}" "${image_name}:${ver%%.*}")

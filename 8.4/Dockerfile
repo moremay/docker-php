@@ -14,7 +14,10 @@ RUN if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache \
+		curl~=8.14.1-r2 \
+		openssl~=3.5.4 \
+		musl-utils~=1.2.5-r10
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
@@ -206,6 +209,8 @@ RUN set -eux; \
 	chmod +x "$FILE_PATH"; \
 	\
 	composer --version
+
+RUN find /usr/local/include/* -type d ! -path "*/php" -maxdepth 0 -exec rm -rf {} \;
 
 FROM scratch
 

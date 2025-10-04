@@ -54,8 +54,6 @@ usage() {
     echo "环境变量 Environment variable"
     echo "   TARGET     指明安装目录，默认 '/usr/local'。"
     echo "              specifies installation directory, defaults to '/usr/local'."
-    echo "   PKG_IGNORE 生成 PKG_CONFIG_PATH 时要忽略的 grep PATTERNS。默认 ssl1"
-    echo "              grep -v PKG_IGNORE."
 }
 
 TARGET="${TARGET:-/usr/local}"
@@ -72,7 +70,7 @@ MAKE_LOG=/usr/src/make
 
 x_before() {
     mkdir -p /usr/src
-    find /usr \( -type f -o -type l \) \( -name "*.so" -o -name "*.so.*" \) |
+    find /usr \( -type f -o -type l \) \( -name "*.a" -o -name "*.so" -o -name "*.so.*" \) |
         sort -u | tee "$FILE_LIST-base" | awk -F/ '{print $NF}' | sort -u > "$FILE_LIST-exists"
 }
 
@@ -102,12 +100,6 @@ apk_add() {
         apk add --no-cache --virtual .phpize-deps $PHPIZE_DEPS "$@"
         x_dev
     fi
-
-    PKG_CONFIG_PATH=$(find /usr -name "*.pc" -type f | grep -v "${PKG_IGNORE:-ssl1}" |
-        tr '\n' '\0' | xargs -r0 -n 1 dirname | sort -u | awk 'NF && $1 != "" {printf(":%s",$0)}')
-    PKG_CONFIG_PATH=${PKG_CONFIG_PATH:1}
-    export PKG_CONFIG_PATH
-    echo "$PKG_CONFIG_PATH"
 }
 
 prune() {

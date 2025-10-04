@@ -15,24 +15,44 @@ RUN if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi
 
+RUN apk add --no-cache \
+		openssl~=3.5.4 \
+		musl-utils~=1.2.5-r10
+
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
-ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
+ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
+
+RUN set -eux; \
+	. docker-lib init "wolfssl" \
+		"https://github.com/wolfSSL/wolfssl/archive/refs/tags/v5.8.2-stable.tar.gz" \
+		"3ef126e3466e2f8f6ebb62b916a7f8fb26c6709dbdf2b63a167759f2fdb53068" \
+		automake libtool linux-headers util-linux-misc \
+		; \
+	./autogen.sh; \
+	./configure --prefix=$TARGET \
+		--enable-curl \
+		--enable-shared \
+		--disable-opensslall \
+		--disable-opensslextra \
+		--disable-examples \
+		; \
+	docker-lib make
 
 RUN set -eux; \
 	. docker-lib init "curl" \
 		"https://curl.se/download/curl-8.16.0.tar.xz" \
 		"40c8cddbcb6cc6251c03dea423a472a6cea4037be654ba5cf5dec6eb2d22ff1d" \
 		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
-		gnutls-dev; \
+		; \
 	./configure --prefix=$TARGET \
 		# replace openssl
-		--with-gnutls \
+		--with-wolfssl \
 		--enable-ares \
 		--enable-ipv6 \
 		--enable-unix-sockets \
-		--enable-static \
+		--enable-shared \
 		--with-libidn2 \
 		--with-nghttp2 \
 		--with-ca-bundle=/etc/ssl/cert.pem \
@@ -46,7 +66,10 @@ RUN set -eux; \
 		; \
 	docker-lib make
 
+ENV PHP_SSL=/usr/local/ssl1.1
+
 RUN set -eux; \
+	TARGET="${PHP_SSL}"; \
 	. docker-lib init 'openssl-1.1' \
 		"https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz" \
 		'cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8' \
@@ -86,9 +109,10 @@ RUN set -eux; \
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
 	cp -v php.ini-* "$PHP_INI_DIR/"; \
 	export \
+		PKG_CONFIG_PATH="/usr/local/ssl1.1/lib/pkgconfig" \
 		CFLAGS="$PHP_CFLAGS" \
 		CPPFLAGS="$PHP_CPPFLAGS" \
-		LDFLAGS="$PHP_LDFLAGS -Wl,--enable-new-dtags,-R,/usr/lib:/usr/local/lib" \
+		LDFLAGS="$PHP_LDFLAGS -Wl,--enable-new-dtags,-R,${PHP_SSL}/lib:/usr/local/lib" \
 	; \
 	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
 	./configure \
@@ -115,7 +139,7 @@ RUN set -eux; \
 		\
 		--with-iconv=/usr/local \
 		--with-libxml \
-		--with-openssl \
+		--with-openssl=${PHP_SSL} \
 		--with-pear \
 		--with-readline \
 		--with-zlib \
@@ -189,7 +213,6 @@ RUN set -eux; \
 		unixodbc-dev \
 		# curl
 		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
-		gnutls-dev \
 	; \
 	docker-lib download "php/ext/redis" \
 		"https://github.com/phpredis/phpredis/archive/refs/tags/6.2.0.tar.gz" \
@@ -237,6 +260,8 @@ RUN set -eux; \
 	chmod +x "$FILE_PATH"; \
 	\
 	composer --version
+
+RUN find /usr/local/include/* -type d ! -path "*/php" -maxdepth 0 -exec rm -rf {} \;
 
 FROM scratch
 

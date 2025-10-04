@@ -18,7 +18,7 @@ Build images for php-fpm.
   + mcrypt &nbsp;&nbsp; php 5. php 7, 8: Alternatives: Sodium/OpenSSL
   + mysql &nbsp;&nbsp;&nbsp;&nbsp; php 5. php 7, 8: Alternatives: mysqli
   + odbc &nbsp;&nbsp;&nbsp;&nbsp; php 7, 8: unixODBC
-  + openssl &nbsp; php 5: openssl 1.0.2u; php 7.4: openssl 1.1.1w (curl uses gnutls); php 8: openssl 3.5.2
+  + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.8.2); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.8.2); php 8: openssl 3.5.4
   + pgsql &nbsp;&nbsp; php 8
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
