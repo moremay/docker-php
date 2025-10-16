@@ -15,9 +15,7 @@ RUN if [ -n "${mirrors}" ]; then \
 	fi
 
 RUN apk add --no-cache \
-		curl~=8.14.1-r2 \
-		openssl~=3.5.4 \
-		musl-utils~=1.2.5-r10
+		curl
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"

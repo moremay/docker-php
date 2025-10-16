@@ -2,14 +2,16 @@
 
 set -e
 
-ver=
+BIN_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+VER_TAG=
+TEST_WEB=
 
 if [[ -n "$1" && "${1:0,1}" != "-" ]]; then
-  ver="$1"
+  VER_TAG="$1"
   work="$(pwd)/$1"
   shift
 elif [ -f "Dockerfile" ]; then
-  ver="$(basename $(pwd))"
+  VER_TAG="$(basename $(pwd))"
   work="$(pwd)"
 fi
 
@@ -25,7 +27,10 @@ while [ $# -gt 0 ]; do
     ;;
   -v|--ver)
     shift
-    ver="$1"
+    VER_TAG="$1"
+    ;;
+  -t|--test)
+    TEST_WEB="yes"
     ;;
   *)
     params=("${params[@]}" "$1")
@@ -34,12 +39,12 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if [ -z "$ver" ]; then
-  ver="8.4"
+if [ -z "$VER_TAG" ]; then
+  VER_TAG="8.4"
 fi
 
 if [ -z "$work" ]; then
-  work="$(dirname "$(realpath "${BASH_SOURCE[0]}")")/$ver"
+  work="$BIN_DIR/$VER_TAG"
 fi
 if [ ! -d "$work" ]; then
   echo "NOT EXISTS: '$work'"
@@ -69,10 +74,10 @@ if [ -x "tags.sh" ]; then
   images=($(./tags.sh))
 else
   image_name="php"
-  images=("${image_name}:$ver")
+  images=("${image_name}:$VER_TAG")
 
   if [ -f .latest ]; then
-      images=("${images[@]}" "${image_name}:${ver%%.*}")
+      images=("${images[@]}" "${image_name}:${VER_TAG%%.*}")
   fi
 fi
 
@@ -81,11 +86,13 @@ for image in "${images[@]}"; do
   name="${user}$image"
   names=("${names[@]}" $name)
   docker tag temp $name
+  [ -n "$PUSH" ] && docker push $name || :
 done
 
 docker rmi temp
-if [ -n "$PUSH" ]; then
-  docker push ${names[0]//:*} -a
-fi
 
 echo -e "\033[36;1m>>> ${names[@]}\033[0m"
+
+if [ -n "$TEST_WEB" ]; then
+  "$BIN_DIR/test.sh" $VER_TAG
+fi

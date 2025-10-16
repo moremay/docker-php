@@ -15,10 +15,6 @@ RUN if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi
 
-RUN apk add --no-cache \
-		openssl~=3.5.4 \
-		musl-utils~=1.2.5-r10
-
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
