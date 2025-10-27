@@ -64,9 +64,16 @@ cp -uvf ../script/docker-* .
 user=$(docker info | grep 'Username' | awk '{print $2}')
 [ -z "$user" ] || user="$user/"
 
-docker build . -t temp "${params[@]}"
+temp_ver=temp
+temp_tag=moremay/php:$temp_ver
+
+docker build . -t $temp_tag "${params[@]}"
 
 rm -f ./docker-*
+
+if [ -n "$TEST_WEB" ]; then
+  "$BIN_DIR/test.sh" $temp_ver
+fi
 
 images=()
 
@@ -85,14 +92,10 @@ names=()
 for image in "${images[@]}"; do
   name="${user}$image"
   names=("${names[@]}" $name)
-  docker tag temp $name
+  docker tag $temp_tag $name
   [ -n "$PUSH" ] && docker push $name || :
 done
 
-docker rmi temp
+docker rmi $temp_tag > /dev/null
 
 echo -e "\033[36;1m>>> ${names[@]}\033[0m"
-
-if [ -n "$TEST_WEB" ]; then
-  "$BIN_DIR/test.sh" $VER_TAG
-fi

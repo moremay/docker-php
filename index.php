@@ -1,5 +1,5 @@
 <?php
-echo "main ok\n";
+echo "PHP ". phpversion() . " ok\n";
 
 echo "". OPENSSL_VERSION_TEXT . "\n";
 

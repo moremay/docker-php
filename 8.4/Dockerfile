@@ -24,11 +24,11 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -ex; \
 	docker-lib download php \
-		"https://www.php.net/distributions/php-8.4.13.tar.xz" \
-		"b4f27adf30bcf262eacf93c78250dd811980f20f3b90d79a3dc11248681842df"
+		"https://www.php.net/distributions/php-8.4.14.tar.xz" \
+		"bac90ee7cf738e814c89b6b27d4d2c4b70e50942a420837e1a22f5fd5f9867a3"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.4.13
+ENV PHP_VERSION=8.4.14
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
@@ -215,7 +215,7 @@ FROM scratch
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.4.13
+ENV PHP_VERSION=8.4.14
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
