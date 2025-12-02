@@ -72,6 +72,7 @@ docker build . -t $temp_tag "${params[@]}"
 rm -f ./docker-*
 
 if [ -n "$TEST_WEB" ]; then
+  docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v ~/trivy-cache:/root/.cache/ aquasec/trivy image $temp_tag
   "$BIN_DIR/test.sh" $temp_ver
 fi
 

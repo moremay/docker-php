@@ -7,22 +7,22 @@ Thank [docker-library/php](https://github.com/docker-library/php) [Alpine](https
 Build images for php-fpm.
 
 + php
-  + php 5.3.29
+  + php 5.4.45
   + php 5.6.40
   + php 7.4.33
-  + php 8.4.13 2025-09-25
+  + php 8.4.15 2025-11-20
+  + php 8.5.0 2025-11-20
 + ext. :
   + add shared :
-  bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, redis, sockets, sodium, timezonedb, xsl, zip
+  bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, pdo_pgsql, pgsql, redis, sockets, sodium, timezonedb, xsl, zip
   + iconv &nbsp;&nbsp;&nbsp;&nbsp; gnu libiconv 1.18
   + mcrypt &nbsp;&nbsp; php 5. php 7, 8: Alternatives: Sodium/OpenSSL
   + mysql &nbsp;&nbsp;&nbsp;&nbsp; php 5. php 7, 8: Alternatives: mysqli
   + odbc &nbsp;&nbsp;&nbsp;&nbsp; php 7, 8: unixODBC
-  + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.8.2); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.8.2); php 8: openssl 3.5.4
-  + pgsql &nbsp;&nbsp; php 8
+  + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.8.4); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.8.4); php 8: openssl 3.5.4
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
-  php 5: 2.2.25; php 7.4, 8.4: latest
+  php 5: 2.2.25; php 7.4, 8: latest 2.9.2
 
 ```shell
 build.sh [[-v|--ver ]ver-dir-name] [-p] [--ali]

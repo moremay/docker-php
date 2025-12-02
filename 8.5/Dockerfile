@@ -26,11 +26,11 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -ex; \
 	docker-lib download php \
-		"https://www.php.net/distributions/php-8.4.15.tar.xz" \
-		"a060684f614b8344f9b34c334b6ba8db1177555997edb5b1aceab0a4b807da7e"
+		"https://www.php.net/distributions/php-8.5.0.tar.xz" \
+		"39cb6e4acd679b574d3d3276f148213e935fc25f90403eb84fb1b836a806ef1e"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.4.15
+ENV PHP_VERSION=8.5.0
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
@@ -89,7 +89,6 @@ RUN set -eux; \
 	\
 	docker-php-ext-enable \
 		sodium \
-		opcache \
 	; \
 	\
 	php -v
@@ -179,6 +178,7 @@ RUN set -eux; \
 		--with-pdo-odbc=unixODBC,/usr \
 	; \
 	\
+	sed -e "s#<ext/standard/php_smart_string.h>#<Zend/zend_smart_string.h>#" -i ext/redis/common.h; \
 	docker-php-ext-install \
 		bcmath \
 		bz2 \
@@ -217,7 +217,7 @@ FROM scratch
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.4.15
+ENV PHP_VERSION=8.5.0
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"

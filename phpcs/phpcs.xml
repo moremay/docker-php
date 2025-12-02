@@ -11,13 +11,13 @@
 
     <ini name="memory_limit" value="1024M"/>
 
-    <config name="testVersion" value="8.4"/>
+    <config name="testVersion" value="8.5"/>
 
     <arg name="extensions" value="php"/>
     <arg name="report-file" value="PHPCS-report.txt"/>
     <arg name="report" value="code"/>
     <arg value="sp"/>
 
-    <!--exclude-pattern type="relative">^/ebak/*</exclude-pattern-->
+    <!--exclude-pattern type="relative">^ebak/*</exclude-pattern-->
     <!--exclude-pattern>*.tpl.php</exclude-pattern-->
 </ruleset>

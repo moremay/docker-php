@@ -11,19 +11,23 @@ ARG TZ
 
 COPY docker-* /usr/local/bin/
 
-RUN if [ -n "${mirrors}" ]; then \
+RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories; \
+	if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi
 
+RUN apk add --no-cache \
+		busybox~1.37.0-r29
+
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch"
-ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
+ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -eux; \
 	. docker-lib init "wolfssl" \
-		"https://github.com/wolfSSL/wolfssl/archive/refs/tags/v5.8.2-stable.tar.gz" \
-		"3ef126e3466e2f8f6ebb62b916a7f8fb26c6709dbdf2b63a167759f2fdb53068" \
+		"https://github.com/wolfSSL/wolfssl/archive/refs/tags/v5.8.4-stable.tar.gz" \
+		"2b702b7a66b0067bfd284408827b1e59288b357b0dd758d0089c062395f2a522" \
 		automake libtool linux-headers util-linux-misc \
 		; \
 	./autogen.sh; \
@@ -38,10 +42,12 @@ RUN set -eux; \
 
 RUN set -eux; \
 	. docker-lib init "curl" \
-		"https://curl.se/download/curl-8.16.0.tar.xz" \
-		"40c8cddbcb6cc6251c03dea423a472a6cea4037be654ba5cf5dec6eb2d22ff1d" \
+		"https://curl.se/download/curl-8.17.0.tar.xz" \
+		"955f6e729ad6b3566260e8fef68620e76ba3c31acf0a18524416a185acf77992" \
 		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
 		; \
+	docker-lib patch "https://gitlab.alpinelinux.org/alpine/aports/-/raw/master/main/curl/reg-19383.patch?inline=false" \
+		"https://gitlab.alpinelinux.org/alpine/aports/-/raw/master/main/curl/reg-19408.patch?inline=false"; \
 	./configure --prefix=$TARGET \
 		# replace openssl
 		--with-wolfssl \
@@ -111,16 +117,16 @@ RUN set -ex; \
 
 RUN set -ex; \
 	docker-lib download php \
-		"https://www.php.net/distributions/php-5.3.29.tar.xz" \
-		"8438c2f14ab8f3d6cd2495aa37de7b559e33b610f9ab264f0c61b531bf0c262d"
+		"https://www.php.net/distributions/php-5.4.45.tar.gz" \
+		"25bc4723955f4e352935258002af14a14a9810b491a19400d76fcdfa9d04b28f"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=5.3.29
+ENV PHP_VERSION=5.4.45
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
 	. docker-lib php-init \
-		curl-dev \
+		curl-dev~8.17.0-r1 \
 		readline-dev \
 		sqlite-dev \
 	; \
@@ -211,11 +217,12 @@ RUN set -eux; \
 		icu-dev \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
-		libpng-dev \
+		libpng-dev~1.6.51-r0 \
 		libvpx-dev \
 		libxml2-dev \
 		libxpm-dev \
 		libxslt-dev \
+		postgresql17-dev \
 	; \
 	\
 	docker-php-ext-configure \
@@ -233,6 +240,7 @@ RUN set -eux; \
 		--with-pdo-mysql=mysqlnd \
 	; \
 	\
+	sed -e 's/ IMG_FMT_I420,/ VPX_IMG_FMT_I420,/' -e 's/\[PLANE_/\[VPX_PLANE_/' -i ext/gd/libgd/webpimg.c; \
 	docker-php-ext-configure \
 		gd \
 		--enable-gd-native-ttf \
@@ -255,6 +263,8 @@ RUN set -eux; \
 		mysql \
 		mysqli \
 		pdo_mysql \
+		pdo_pgsql \
+		pgsql \
 		sockets \
 		xsl \
 		zip \
@@ -271,7 +281,7 @@ RUN set -eux; \
 	\
 	pecl install \
 		redis-4.3.0 \
-		timezonedb-2021.1 \
+		timezonedb \
 		ZendOpcache \
 	; \
 	\
@@ -300,11 +310,11 @@ FROM scratch
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=5.3.29
+ENV PHP_VERSION=5.4.45
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch"
-ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
+ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 

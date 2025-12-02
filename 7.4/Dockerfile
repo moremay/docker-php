@@ -11,9 +11,13 @@ ARG TZ
 
 COPY docker-* /usr/local/bin/
 
-RUN if [ -n "${mirrors}" ]; then \
+RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories; \
+	if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi
+
+RUN apk add --no-cache \
+		busybox~1.37.0-r29
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
@@ -22,8 +26,8 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -eux; \
 	. docker-lib init "wolfssl" \
-		"https://github.com/wolfSSL/wolfssl/archive/refs/tags/v5.8.2-stable.tar.gz" \
-		"3ef126e3466e2f8f6ebb62b916a7f8fb26c6709dbdf2b63a167759f2fdb53068" \
+		"https://github.com/wolfSSL/wolfssl/archive/refs/tags/v5.8.4-stable.tar.gz" \
+		"2b702b7a66b0067bfd284408827b1e59288b357b0dd758d0089c062395f2a522" \
 		automake libtool linux-headers util-linux-misc \
 		; \
 	./autogen.sh; \
@@ -38,10 +42,12 @@ RUN set -eux; \
 
 RUN set -eux; \
 	. docker-lib init "curl" \
-		"https://curl.se/download/curl-8.16.0.tar.xz" \
-		"40c8cddbcb6cc6251c03dea423a472a6cea4037be654ba5cf5dec6eb2d22ff1d" \
+		"https://curl.se/download/curl-8.17.0.tar.xz" \
+		"955f6e729ad6b3566260e8fef68620e76ba3c31acf0a18524416a185acf77992" \
 		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
 		; \
+	docker-lib patch "https://gitlab.alpinelinux.org/alpine/aports/-/raw/master/main/curl/reg-19383.patch?inline=false" \
+		"https://gitlab.alpinelinux.org/alpine/aports/-/raw/master/main/curl/reg-19408.patch?inline=false"; \
 	./configure --prefix=$TARGET \
 		# replace openssl
 		--with-wolfssl \
@@ -195,20 +201,22 @@ RUN set -eux; \
 RUN set -eux; \
 	. docker-lib php-init \
 		bzip2-dev \
+		curl-dev~8.17.0-r1 \
 		freetype-dev \
 		gettext-dev \
 		gmp-dev \
 		icu-dev \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
-		libpng-dev \
+		libpng-dev~1.6.51-r0 \
 		libwebp-dev \
 		libxpm-dev \
 		libxslt-dev \
 		libzip-dev \
 		unixodbc-dev \
+		postgresql17-dev \
 		# curl
-		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
+		#brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
 	; \
 	docker-lib download "php/ext/redis" \
 		"https://github.com/phpredis/phpredis/archive/refs/tags/6.2.0.tar.gz" \
@@ -239,6 +247,8 @@ RUN set -eux; \
 		mysqli \
 		pdo_mysql \
 		pdo_odbc \
+		pdo_pgsql \
+		pgsql \
 		redis \
 		sockets \
 		timezonedb \
@@ -268,7 +278,7 @@ ENV PHP_VERSION=7.4.33
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
-ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
+ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
