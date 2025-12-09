@@ -3,7 +3,7 @@ ARG mirrors=
 ARG gnu_mirrors=http://ftp.gnu.org/pub/gnu
 ARG TZ=
 
-FROM alpine:3.22 AS builder
+FROM alpine:3.23 AS builder
 
 ARG mirrors
 ARG gnu_mirrors
@@ -16,8 +16,8 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi
 
-RUN apk add --no-cache \
-		busybox~1.37.0-r29
+#RUN apk add --no-cache \
+#		busybox
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
@@ -201,14 +201,14 @@ RUN set -eux; \
 RUN set -eux; \
 	. docker-lib php-init \
 		bzip2-dev \
-		curl-dev~8.17.0-r1 \
+		curl-dev \
 		freetype-dev \
 		gettext-dev \
 		gmp-dev \
 		icu-dev \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
-		libpng-dev~1.6.51-r0 \
+		libpng-dev \
 		libwebp-dev \
 		libxpm-dev \
 		libxslt-dev \
