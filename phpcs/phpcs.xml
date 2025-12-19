@@ -4,10 +4,10 @@
 
     <rule ref="PHPCompatibility"/>
 
-    <rule ref="PHPCompatibilityPeclMcrypt"/>
+    <!--rule ref="PHPCompatibilityPeclMcrypt"/>
 	<rule ref="PHPCompatibility.FunctionNameRestrictions.ReservedFunctionNames.MethodDoubleUnderscore">
         <exclude-pattern>*</exclude-pattern>
-    </rule>
+    </rule>-->
 
     <ini name="memory_limit" value="1024M"/>
 

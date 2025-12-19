@@ -40,7 +40,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$VER_TAG" ]; then
-  VER_TAG="8.4"
+  VER_TAG="8.5"
 fi
 
 if [ -z "$work" ]; then

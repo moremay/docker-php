@@ -23,6 +23,7 @@ Build images for php-fpm.
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
   php 5: 2.2.25; php 7.4, 8: latest 2.9.2
++ phpcs
 
 ```shell
 build.sh [[-v|--ver ]ver-dir-name] [-p] [--ali]
@@ -46,6 +47,12 @@ build.sh [[-v|--ver ]ver-dir-name] [-p] [--ali]
 cd phpcs
 ./phpcs.sh --usage
 ./phpcs.sh [-v|--volume list] [-p .]|<-p path/to/php-dir-or-file> [PHP CodeSniffer options]
+```
+
+或
+
+```bash
+docker run --rm -it -v .:/www/ moremay/php:cs
 ```
 
 ## Extensions

@@ -10,8 +10,8 @@ else
     if [ -f composer.json ]; then
         composer update
     else
-        echo "{}" >composer.json; \
-        composer config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true; \
-        composer require --dev dealerdirect/phpcodesniffer-composer-installer:"^0.7" phpcompatibility/phpcompatibility-all:"*"; \
+        echo "{}" >composer.json
+        composer config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+        composer require --dev dealerdirect/phpcodesniffer-composer-installer:"*" phpcompatibility/phpcompatibility-all:"*"
     fi
 fi

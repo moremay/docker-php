@@ -1,0 +1,62 @@
+#!/usr/bin/env php
+<?php
+
+if (! file_exists('/www/phpcs.xml')) {
+    echo "Use default phpcs.xml\n\n";
+    copy('/phpcs/phpcs.xml', '/www/phpcs.xml');
+} else {
+    echo "Standard phpcs.xml exists\n\n";
+}
+
+$args = [];
+$ignoreDirs = [];
+
+for ($i = 1; $i < $argc; $i++) {
+    if (strpos($argv[$i], '--ignore=') === 0) {
+        $ignoreValue = substr($argv[$i], 9);
+        $ignoreDirs = array_map('trim', explode(',', trim($ignoreValue, "'\"")));
+    } else {
+        $args[] = $argv[$i];
+    }
+}
+
+$args = empty($args) ? '' : implode(' ', array_map('escapeshellarg', $args));
+
+$xmls = [];
+exec("find /www -name 'phpcs.xml' -type f 2>/dev/null", $xmls);
+
+$dirs = [];
+$allDirs = [];
+foreach ($xmls as $xml) {
+    $dir = dirname($xml);
+    if (! in_array($dir, $ignoreDirs)) {
+        $dirs[$dir] = ['xml' => $xml, 'ignore' => []];
+        $allDirs[] = $dir;
+    }
+}
+
+usort($allDirs, function ($a, $b) {
+    return strlen($b) - strlen($a);
+});
+
+foreach ($dirs as $dir => &$d) {
+    $sub = "$dir/";
+    foreach ($allDirs as $other) {
+        if ($other != $dir && strpos($other, $sub) === 0) {
+            $d['ignore'][] = $other;
+        }
+    }
+
+    $argString = $args;
+    if (!empty($d['ignore'])) {
+        $argString .= ' --ignore=' . escapeshellarg(implode(',',  $d['ignore']));
+    }
+
+    $cmd = "/phpcs/vendor/bin/phpcs --basepath=/www --standard=" .
+        escapeshellarg($d['xml']) . " . " . $argString;
+
+    echo "# cd '$dir'\n# $cmd\n";
+
+    chdir($dir);
+    system($cmd);
+}
