@@ -25,11 +25,11 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -ex; \
 	docker-lib download php \
-		"https://www.php.net/distributions/php-8.5.0.tar.xz" \
-		"39cb6e4acd679b574d3d3276f148213e935fc25f90403eb84fb1b836a806ef1e"
+		"https://www.php.net/distributions/php-8.5.1.tar.xz" \
+		"3f5bf99ce81201f526d25e288eddb2cfa111d068950d1e9a869530054ff98815"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.0
+ENV PHP_VERSION=8.5.1
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
@@ -216,7 +216,7 @@ FROM scratch
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.0
+ENV PHP_VERSION=8.5.1
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
