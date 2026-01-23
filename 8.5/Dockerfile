@@ -9,14 +9,18 @@ ARG gnu_mirrors
 ARG TZ
 
 COPY docker-* /usr/local/bin/
+COPY x86_64 /usr/src/repo/x86_64
 
 RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories; \
 	if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
-	fi
+	fi; \
+	echo '/usr/src/repo/' >> /etc/apk/repositories
 
-RUN apk add --no-cache \
-		curl
+RUN apk add --allow-untrusted --no-cache \
+	busybox~1.37.0-r31 \
+	zlib-dev~1.3.1-r10 \
+	curl~8.18.0-r0
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
@@ -24,12 +28,12 @@ ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -ex; \
-	docker-lib download php \
-		"https://www.php.net/distributions/php-8.5.1.tar.xz" \
-		"3f5bf99ce81201f526d25e288eddb2cfa111d068950d1e9a869530054ff98815"
+	docker-lib download /usr/src/php \
+		"https://www.php.net/distributions/php-8.5.2.tar.xz" \
+		"cb75a9b00a2806f7390dd64858ef42a47b443b3475769c8af6af33a18b1381f1"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.1
+ENV PHP_VERSION=8.5.2
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
@@ -156,11 +160,11 @@ RUN set -eux; \
 		unixodbc-dev \
 	; \
 	\
-	docker-lib download "php/ext/redis" \
+	docker-lib download "ext/redis" \
 		"https://github.com/phpredis/phpredis/archive/refs/tags/6.2.0.tar.gz" \
 		"470333b27cbf9485d36b610b81300c06491a6575f22c6801a9cefc55285ed123" \
 		tar; \
-	docker-lib download "php/ext/timezonedb" \
+	docker-lib download "ext/timezonedb" \
 		"https://pecl.php.net/get/timezonedb-2025.2.tgz" \
 		"ae32b224a843df303d61bffbf38ce325e0ca6117b92a974a101a6729d1ce5fea" \
 		tar; \
@@ -210,13 +214,14 @@ RUN set -eux; \
 	composer --version
 
 RUN find /usr/local/include/* -type d ! -path "*/php" -maxdepth 0 -exec rm -rf {} \;
+RUN rm -rf /usr/src/repo
 
 FROM scratch
 
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.1
+ENV PHP_VERSION=8.5.2
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"

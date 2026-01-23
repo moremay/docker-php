@@ -59,7 +59,8 @@ echo "Enter $work"
 pushd "$work" >/dev/null
 trap "echo Leave $work; popd >/dev/null" EXIT
 
-cp -uvf ../script/docker-* .
+cp -uvf ../script/* .
+cp -ruvf ../apk/x86_64 .
 
 user=$(docker info | grep 'Username' | awk '{print $2}')
 [ -z "$user" ] || user="$user/"
@@ -69,7 +70,7 @@ temp_tag=moremay/php:$temp_ver
 
 docker build . -t $temp_tag "${params[@]}"
 
-rm -f ./docker-*
+rm -rf ./docker-* ./x86_64
 
 if [ -n "$TEST_WEB" ]; then
   docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v ~/trivy-cache:/root/.cache/ aquasec/trivy image $temp_tag

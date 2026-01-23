@@ -10,14 +10,17 @@ ARG gnu_mirrors
 ARG TZ
 
 COPY docker-* /usr/local/bin/
+COPY x86_64 /usr/src/repo/x86_64
 
 RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories; \
 	if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
-	fi
+	fi; \
+	echo '/usr/src/repo/' >> /etc/apk/repositories
 
-#RUN apk add --no-cache \
-#		busybox
+RUN apk add --allow-untrusted --no-cache \
+	busybox~1.37.0-r31 \
+	zlib-dev~1.3.1-r10
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
@@ -42,12 +45,10 @@ RUN set -eux; \
 
 RUN set -eux; \
 	. docker-lib init "curl" \
-		"https://curl.se/download/curl-8.17.0.tar.xz" \
-		"955f6e729ad6b3566260e8fef68620e76ba3c31acf0a18524416a185acf77992" \
-		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
+		"https://curl.se/download/curl-8.18.0.tar.xz" \
+		"40df79166e74aa20149365e11ee4c798a46ad57c34e4f68fd13100e2c9a91946" \
+		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zstd-dev \
 		; \
-	docker-lib patch "https://gitlab.alpinelinux.org/alpine/aports/-/raw/master/main/curl/reg-19383.patch?inline=false" \
-		"https://gitlab.alpinelinux.org/alpine/aports/-/raw/master/main/curl/reg-19408.patch?inline=false"; \
 	./configure --prefix=$TARGET \
 		# replace openssl
 		--with-wolfssl \
@@ -115,7 +116,7 @@ RUN set -ex; \
 	docker-lib make
 
 RUN set -ex; \
-	docker-lib download php \
+	docker-lib download /usr/src/php \
 		"https://www.php.net/distributions/php-5.6.40.tar.xz" \
 		"1369a51eee3995d7fbd1c5342e5cc917760e276d561595b6052b21ace2656d1c"
 
@@ -290,6 +291,7 @@ RUN set -eux; \
 	composer --version
 
 RUN find /usr/local/include/* -type d ! -path "*/php" -maxdepth 0 -exec rm -rf {} \;
+RUN rm -rf /usr/src/repo
 
 FROM scratch
 

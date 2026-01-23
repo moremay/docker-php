@@ -9,13 +9,16 @@ usage() {
     echo "        列出当前安装的可执行文件所需的动态库依赖。"
     echo "        List dynamic library dependencies of currently installed executables."
     echo ""
-    echo "    download <src> <tar-url> <sha256> [tar | file]"
-    echo "        下载一个tar压缩包并验证其 SHA256 校验和。"
-    echo "        Download a tarball and verify its SHA256 checksum."
+    echo "    download <src> <url> <sha256> [[down] | tar | git | file | gz]"
+    echo "        下载一个文件并验证其 SHA256 校验和。"
+    echo "        Download a file and verify its SHA256 checksum."
     echo "        ---"
-    echo "        src   rel (/usr/src) or abs path."
+    echo "        src   save / extract to a rel (or abs) path."
+    echo "        down  默认：自动添加扩展名。Default: save to src.ext."
     echo "        tar   解压压缩包。extract a tarball. save to src.ext, extract to src."
-    echo "        file  目标仅当作单个文件。src 不自动添加扩展名。Target as a single file. save to src."
+    echo "        git   git clone <url> <src>."
+    echo "        file  src 不自动添加扩展名。save to src."
+    echo "        gz    目标是压缩的单个文件。解压为 src。Target as a single compressed file. extract to src."
     echo ""
     echo "    help"
     echo "        显示此帮助信息。"
@@ -35,6 +38,10 @@ usage() {
     echo "    patch <url>..."
     echo "        下载并应用补丁(.patch 文件)。"
     echo "        Download and apply patches (.patch files)."
+    echo ""
+    echo "    patch256 <patch-name> <url> <sha256> <file|gz>"
+    echo "        下载补丁验证其 SHA256 校验和并应用(.patch/.gz 文件)。"
+    echo "        Download a patch, verify its SHA256 checksum and apply it (.patch/.gz file)."
     echo ""
     echo "    php-init [deps...]"
     echo "        提取 PHP 源码并安装构建依赖（用于 PHP 扩展编译）。"
@@ -97,7 +104,7 @@ apk_add() {
     # prev make no --keep-dev
     if [ ! -f "$FILE_LIST-base" ]; then
         x_before
-        apk add --no-cache --virtual .phpize-deps $PHPIZE_DEPS "$@"
+        apk add --allow-untrusted --no-cache --virtual .phpize-deps $PHPIZE_DEPS "$@"
         x_dev
     fi
 }
@@ -162,7 +169,7 @@ prune() {
             echo "### $(basename "$SRC_DIR") deps:"
             echo "$run_deps"
         } | tee -a "$MAKE_LOG-deps"
-        apk add --no-cache $run_deps
+        apk add --allow-untrusted --no-cache $run_deps
     fi
 
     rm -f "$FILE_LIST-"*
@@ -226,23 +233,29 @@ download() {
     local LIB_SHA256="$3"
     shift 3
 
-    local single_file=
-    local try_tar=
+    local action="down"
     while [ $# -gt 0 ]; do
         case "$1" in
-        tar) try_tar=yes ;;
-        file) single_file=yes ;;
+        tar | git | file | gz) action="$1" ;;
         esac
         shift
     done
 
     test "." = "$LIB_PATH" && LIB_PATH=""
-    test "/" != "${LIB_PATH:0:1}" && LIB_PATH="/usr/src/$LIB_PATH"
+    test "/" != "${LIB_PATH:0:1}" && LIB_PATH="$(pwd)/$LIB_PATH"
+
+    if [ "$action" = "git" ]; then
+        git clone "$LIB_URL" "$LIB_PATH"
+        cd "$LIB_PATH"
+        touch .remove_tar_file
+        return
+    fi
 
     local LIB_FILE
-    if [ "$single_file" = "yes" ]; then
+    if [ "$action" = "file" ]; then
         LIB_FILE="$LIB_PATH"
-        try_tar=
+    elif [ "$action" = "gz" ]; then
+        LIB_FILE="$LIB_PATH.gz"
     else
         local LIB_EXT
         LIB_FILE="$(basename "${LIB_URL%%\?*}")"
@@ -258,7 +271,9 @@ download() {
     curl -Lko "$LIB_FILE" "$LIB_URL"
     echo "$LIB_SHA256 *$LIB_FILE" | sha256sum -c -
 
-    if [ "$try_tar" = "yes" ]; then
+    if [ "$action" = "gz" ]; then
+        gzip -d "$LIB_FILE"
+    elif [ "$action" = "tar" ]; then
         mkdir -p "$LIB_PATH"
         tar -axf "$LIB_FILE" -C "$LIB_PATH" --strip-components=1
 
@@ -282,15 +297,23 @@ main() {
             local LIB_PATH="$2"
             local LIB_URL="$3"
             local LIB_SHA256="$4"
+            local LIB_ACTION="tar"
+            local cmd_download="curl"
             shift 4
 
-            if command -v curl >/dev/null; then
-                apk_add "$@"
-            else
-                apk_add curl "$@"
+            if [ "$LIB_SHA256" = "git" ]; then
+                LIB_ACTION="git"
+                cmd_download="git"
             fi
 
-            download "$LIB_PATH" "$LIB_URL" "$LIB_SHA256" tar
+            if command -v $cmd_download >/dev/null; then
+                apk_add "$@"
+            else
+                apk_add $cmd_download "$@"
+            fi
+
+            cd /usr/src
+            download "$LIB_PATH" "$LIB_URL" "$LIB_SHA256" "$LIB_ACTION"
             ;;
         php-init)
             docker-php-source extract
@@ -298,6 +321,11 @@ main() {
 
             shift
             apk_add "$@"
+            ;;
+        patch256)
+            shift
+            download "$@"
+            patch -p1 < "$1"
             ;;
         patch)
             shift
