@@ -272,6 +272,9 @@ RUN find /usr/local/include/* -type d ! -path "*/php" -maxdepth 0 -exec rm -rf {
 RUN rm -rf /usr/src/repo
 
 FROM scratch
+LABEL org.opencontainers.image.authors="moremay"
+LABEL org.opencontainers.image.source="https://github.com/moremay/docker-php"
+LABEL org.opencontainers.image.licenses="MIT"
 
 ARG TZ
 

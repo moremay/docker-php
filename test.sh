@@ -2,23 +2,22 @@
 
 set -e
 
-ver=
-if [[ -n "$1" && "${1:0,1}" != "-" ]]; then
-  ver="$1"
-  shift
-elif [ -f "Dockerfile" ]; then
-  ver="$(basename $(pwd))"
+image="$1"
+if [ -z "$image" ]; then
+  echo "Usage: ./test.sh <image>"
+  exit
 fi
 
-if [ -z "$ver" ]; then
-  ver="8.4"
+if ! docker image inspect -f "{{.Config.Entrypoint}}{{.Config.Cmd}}" $image | grep -q 'php-fpm'; then
+  echo "Not php-fpm !"
+  exit
 fi
 
 if ! command -v cgi-fcgi > /dev/null; then
   sudo apt-get install libfcgi0ldbl
 fi
 
-docker run -d -it --rm -v "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/index.php":/var/www/html/index.php -p 9000:9000 --name test-php-fpm moremay/php:$ver
+docker run -d -it --rm -v "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/index.php":/var/www/html/index.php -p 9000:9000 --name test-php-fpm $image
 trap 'docker stop test-php-fpm >/dev/null' EXIT
 
 sleep 2

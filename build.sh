@@ -3,15 +3,16 @@
 set -e
 
 BIN_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-VER_TAG=
+IMAGE_REPO="php"
+IMAGE_TAG=
 TEST_WEB=
 
 if [[ -n "$1" && "${1:0,1}" != "-" ]]; then
-  VER_TAG="$1"
+  IMAGE_TAG="$1"
   work="$(pwd)/$1"
   shift
 elif [ -f "Dockerfile" ]; then
-  VER_TAG="$(basename $(pwd))"
+  IMAGE_TAG="$(basename $(pwd))"
   work="$(pwd)"
 fi
 
@@ -27,7 +28,7 @@ while [ $# -gt 0 ]; do
     ;;
   -v|--ver)
     shift
-    VER_TAG="$1"
+    IMAGE_TAG="$1"
     ;;
   -t|--test)
     TEST_WEB="yes"
@@ -39,12 +40,12 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if [ -z "$VER_TAG" ]; then
-  VER_TAG="8.5"
+if [ -z "$IMAGE_TAG" ]; then
+  IMAGE_TAG="8.5"
 fi
 
 if [ -z "$work" ]; then
-  work="$BIN_DIR/$VER_TAG"
+  work="$BIN_DIR/$IMAGE_TAG"
 fi
 if [ ! -d "$work" ]; then
   echo "NOT EXISTS: '$work'"
@@ -65,39 +66,25 @@ cp -ruvf ../apk/x86_64 .
 user=$(docker info | grep 'Username' | awk '{print $2}')
 [ -z "$user" ] || user="$user/"
 
-temp_ver=temp
-temp_tag=moremay/php:$temp_ver
+default_image="${user}${IMAGE_REPO}:$IMAGE_TAG"
+images="-t $default_image"
+if [ -f .latest ]; then
+    images="$images -t ${user}${IMAGE_REPO}:${IMAGE_TAG%%.*}"
+fi
 
-docker build . -t $temp_tag "${params[@]}"
+if [ -n "$PUSH" ]; then
+  export DOCKER_BUILDKIT=1
+  docker buildx create --name provenance-builder --use || :
+  docker buildx build . --provenance=mode=max --sbom=true --push $images "${params[@]}"
+else
+  docker build . $images "${params[@]}"
+fi
 
 rm -rf ./docker-* ./x86_64
 
 if [ -n "$TEST_WEB" ]; then
-  docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v ~/trivy-cache:/root/.cache/ aquasec/trivy image $temp_tag
-  "$BIN_DIR/test.sh" $temp_ver
+  docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v ~/trivy-cache:/root/.cache/ aquasec/trivy image $default_image
+  "$BIN_DIR/test.sh" $default_image
 fi
 
-images=()
-
-if [ -x "tags.sh" ]; then
-  images=($(./tags.sh))
-else
-  image_name="php"
-  images=("${image_name}:$VER_TAG")
-
-  if [ -f .latest ]; then
-      images=("${images[@]}" "${image_name}:${VER_TAG%%.*}")
-  fi
-fi
-
-names=()
-for image in "${images[@]}"; do
-  name="${user}$image"
-  names=("${names[@]}" $name)
-  docker tag $temp_tag $name
-  [ -n "$PUSH" ] && docker push $name || :
-done
-
-docker rmi $temp_tag > /dev/null
-
-echo -e "\033[36;1m>>> ${names[@]}\033[0m"
+echo -e "\033[36;1m>>> ${images}\033[0m"
