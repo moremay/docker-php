@@ -2,33 +2,49 @@
 
 set -e
 
-BIN_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-IMAGE_REPO="php"
-IMAGE_TAG=
-TEST_WEB=
+usage() {
+  echo "Usage: ./build.sh <dirname> [-v|-ver image-tag] [-p|--push] [-t|--test] [--ali] [buildx options]"
+}
 
-if [[ -n "$1" && "${1:0,1}" != "-" ]]; then
-  IMAGE_TAG="$1"
-  work="$(pwd)/$1"
-  shift
-elif [ -f "Dockerfile" ]; then
-  IMAGE_TAG="$(basename $(pwd))"
-  work="$(pwd)"
+work="$1"
+if [[ -z "$work" || ! -d "$work" ]]; then
+  usage
+  exit 1
 fi
 
+if [ ! -f "$work/Dockerfile" ]; then
+  echo "Not docker : '$work/Dockerfile' not exist"
+  exit 1
+fi
+
+BIN_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+IMAGE_REPO="php"
+IMAGE_TAG="$work"
+TEST_WEB=
 PUSH=
 params=()
+
+if [ -f "$work/tag" ]; then
+  tag_tmp=$(< "$work/tag")
+  test -n "$tag_tmp" && IMAGE_TAG="$tag_tmp"
+fi
+
+shift
 while [ $# -gt 0 ]; do
   case $1 in
   --ali)
     params=("${params[@]}" --build-arg mirrors=mirrors.aliyun.com --build-arg gnu_mirrors=https://mirrors.aliyun.com/gnu)
     ;;
-  -p)
+  -p|--push)
     PUSH=yes
     ;;
   -v|--ver)
     shift
     IMAGE_TAG="$1"
+    if [[ -z "$IMAGE_TAG" || '-' == "${IMAGE_TAG:0:1}" ]]; then
+      echo "--ver does not specify a tag"
+      exit 1
+    fi
     ;;
   -t|--test)
     TEST_WEB="yes"
@@ -39,22 +55,6 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-
-if [ -z "$IMAGE_TAG" ]; then
-  IMAGE_TAG="8.5"
-fi
-
-if [ -z "$work" ]; then
-  work="$BIN_DIR/$IMAGE_TAG"
-fi
-if [ ! -d "$work" ]; then
-  echo "NOT EXISTS: '$work'"
-  exit 1
-fi
-if [ ! -f "$work/Dockerfile" ]; then
-  echo "NOT docker: '$work'"
-  exit 1
-fi
 
 echo "Enter $work"
 pushd "$work" >/dev/null
@@ -73,11 +73,12 @@ if [ -f .latest ]; then
 fi
 
 if [ -n "$PUSH" ]; then
-  export DOCKER_BUILDKIT=1
   docker buildx create --name provenance-builder --use || :
   docker buildx build . --provenance=mode=max --sbom=true --push $images "${params[@]}"
+  #docker buildx rm provenance-builder
 else
-  docker build . $images "${params[@]}"
+  docker buildx use default
+  docker buildx build . $images "${params[@]}"
 fi
 
 rm -rf ./docker-* ./x86_64
@@ -87,4 +88,4 @@ if [ -n "$TEST_WEB" ]; then
   "$BIN_DIR/test.sh" $default_image
 fi
 
-echo -e "\033[36;1m>>> ${images}\033[0m"
+echo -e "\033[36;1m>>> $(echo "$images" | sed 's/-t //')\033[0m"
