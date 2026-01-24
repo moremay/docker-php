@@ -3,7 +3,7 @@
 set -e
 
 usage() {
-  echo "Usage: ./build.sh <dirname> [-v|-ver image-tag] [-p|--push] [-t|--test] [--ali] [buildx options]"
+  echo "Usage: ./build.sh <dirname> [-v|-ver image-tag] [-p|--push] [-t|--test] [-m|--mirrors] [buildx options]"
 }
 
 work="$1"
@@ -32,8 +32,8 @@ fi
 shift
 while [ $# -gt 0 ]; do
   case $1 in
-  --ali)
-    params=("${params[@]}" --build-arg mirrors=mirrors.aliyun.com --build-arg gnu_mirrors=https://mirrors.aliyun.com/gnu)
+  -m|--mirrors)
+    params=("${params[@]}" --build-arg mirrors=mirrors.nju.edu.cn --build-arg gnu_mirrors=https://mirrors.nju.edu.cn/gnu)
     ;;
   -p|--push)
     PUSH=yes
