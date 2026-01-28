@@ -19,7 +19,7 @@ Build images for php-fpm.
   + mcrypt &nbsp;&nbsp; php 5. php 7, 8: Alternatives: Sodium/OpenSSL
   + mysql &nbsp;&nbsp;&nbsp;&nbsp; php 5. php 7, 8: Alternatives: mysqli
   + odbc &nbsp;&nbsp;&nbsp;&nbsp; php 7, 8: unixODBC
-  + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.8.4); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.8.4); php 8: openssl 3.5.4
+  + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.8.4); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.8.4); php 8: openssl 3.5.5
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
   php 5: 2.2.25; php 7.4, 8: latest 2.9.4
@@ -73,7 +73,7 @@ docker run --rm -it -v .:/www/ moremay/php:cs
 ||**after** mbstring|php_mbstring.dll<BR />...<BR />php_exif.dll|
 |fileinfo||php_fileinfo.dll|
 |ftp [[1]](#n_1)||--enable-ftp|
-|gd| |--with-gd[=DIR]|
+|gd||--with-gd[=DIR]|
 |gd:avif|libavif-dev|**>=8.1**--with-avif[=DIR]|
 |gd:freetype|freetype-dev *-or-* libfreetype-dev|**<7.4** --with-freetype-dir[=DIR]<BR />**>=7.4** --with-freetype[=DIR]<BR />---<BR />**<7.2** *string function* [--enable-gd-native-ttf]<BR />*Type 1 fonts* [--with-t1lib[=DIR]]<BR />---<BR />~~JIS-mapped Japanese font~~ [--enable-gd-jis-conv]|
 |gd:jpeg|libjpeg*62*-turbo-dev -*or*- libjpeg-dev|**<7.4** --with-jpeg-dir[=DIR]<BR />**>=7.4** --with-jpeg[=DIR]|

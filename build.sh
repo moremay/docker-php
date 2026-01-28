@@ -60,11 +60,13 @@ echo "Enter $work"
 pushd "$work" >/dev/null
 trap "echo Leave $work; popd >/dev/null" EXIT
 
-cp -uvf ../script/* .
-cp -ruvf ../apk/x86_64 .
-
 user=$(docker info | grep 'Username' | awk '{print $2}')
 [ -z "$user" ] || user="$user/"
+
+if [ "$IMAGE_TAG" != "${IMAGE_TAG%%:*}" ]; then
+  IMAGE_REPO="${IMAGE_TAG%%:*}"
+  IMAGE_TAG="${IMAGE_TAG//*:}"
+fi
 
 default_image="${user}${IMAGE_REPO}:$IMAGE_TAG"
 images="-t $default_image"
@@ -72,13 +74,15 @@ if [ -f .latest ]; then
     images="$images -t ${user}${IMAGE_REPO}:${IMAGE_TAG%%.*}"
 fi
 
+cp -uvf ../script/* .
+cp -ruvf ../apk/x86_64 .
+
+instance_name=provenance-builder
+docker buildx use $instance_name || docker buildx create --name $instance_name --use
 if [ -n "$PUSH" ]; then
-  docker buildx create --name provenance-builder --use || :
   docker buildx build . --provenance=mode=max --sbom=true --push $images "${params[@]}"
-  #docker buildx rm provenance-builder
 else
-  docker buildx use default
-  docker buildx build . $images "${params[@]}"
+  docker buildx build . --load $images "${params[@]}"
 fi
 
 rm -rf ./docker-* ./x86_64
@@ -88,4 +92,4 @@ if [ -n "$TEST_WEB" ]; then
   "$BIN_DIR/test.sh" $default_image
 fi
 
-echo -e "\033[36;1m>>> $(echo "$images" | sed 's/-t //')\033[0m"
+echo -e "\033[36;1m>>> $(echo "$images" | sed 's/-t //g')\033[0m"

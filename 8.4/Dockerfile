@@ -20,7 +20,7 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 RUN apk add --allow-untrusted --no-cache \
 	busybox~1.37.0-r31 \
 	zlib-dev~1.3.1-r10 \
-	curl~8.18.0-r0
+	curl~8.18.0-r0 openssl
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
