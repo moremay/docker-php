@@ -218,7 +218,7 @@ RUN set -eux; \
 		icu-dev \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
-		libpng-dev \
+		libpng-dev~1.6.55-r0 \
 		libvpx-dev \
 		libxml2-dev \
 		libxpm-dev \

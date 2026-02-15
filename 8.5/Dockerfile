@@ -29,11 +29,11 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -ex; \
 	docker-lib download /usr/src/php \
-		"https://www.php.net/distributions/php-8.5.2.tar.xz" \
-		"cb75a9b00a2806f7390dd64858ef42a47b443b3475769c8af6af33a18b1381f1"
+		"https://www.php.net/distributions/php-8.5.3.tar.xz" \
+		"ce65725b8af07356b69a6046d21487040b11f2acfde786de38b2bfb712c36eb9"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.2
+ENV PHP_VERSION=8.5.3
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
@@ -150,7 +150,7 @@ RUN set -eux; \
 		libavif-dev \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
-		libpng-dev \
+		libpng-dev~1.6.55-r0 \
 		libwebp-dev \
 		libxpm-dev \
 		libxslt-dev \
@@ -224,7 +224,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.2
+ENV PHP_VERSION=8.5.3
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"

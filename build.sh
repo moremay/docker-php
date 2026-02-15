@@ -81,9 +81,8 @@ instance_name=provenance-builder
 docker buildx use $instance_name || docker buildx create --name $instance_name --use
 if [ -n "$PUSH" ]; then
   docker buildx build . --provenance=mode=max --sbom=true --push $images "${params[@]}"
-else
-  docker buildx build . --load $images "${params[@]}"
 fi
+docker buildx build . --load $images "${params[@]}"
 
 rm -rf ./docker-* ./x86_64
 

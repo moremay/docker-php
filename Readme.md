@@ -10,8 +10,8 @@ Build images for php-fpm.
   + php 5.4.45
   + php 5.6.40
   + php 7.4.33
-  + php 8.4.17 2026-01-15
-  + php 8.5.2 2026-01-15
+  + php 8.4.18 2026-02-12
+  + php 8.5.3 2026-02-12
 + ext. :
   + add shared :
   bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, pdo_pgsql, pgsql, redis, sockets, sodium, timezonedb, xsl, zip
@@ -22,7 +22,7 @@ Build images for php-fpm.
   + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.8.4); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.8.4); php 8: openssl 3.5.5
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
-  php 5: 2.2.25; php 7.4, 8: latest 2.9.4
+  php 5: 2.2.25; php 7.4, 8: latest 2.9.5
 + phpcs
 
 ```shell

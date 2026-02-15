@@ -1,6 +1,15 @@
 <?php
 echo "PHP ". phpversion() . " ok\n";
 
+$output = [];
+$return_var = 0;
+exec('composer --version', $output, $return_var);
+if ($return_var === 0) {
+    echo "" . $output[0] ."\n"; // 输出第一行，通常是版本信息
+} else {
+    echo "Failed to get Composer version.\n";
+}
+
 echo "". OPENSSL_VERSION_TEXT . "\n";
 
 $ver_info = curl_version();
