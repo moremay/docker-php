@@ -215,7 +215,7 @@ RUN set -eux; \
 		libxslt-dev \
 		libzip-dev \
 		unixodbc-dev \
-		postgresql17-dev \
+		postgresql18-dev \
 		# curl
 		#brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
 	; \

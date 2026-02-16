@@ -226,7 +226,7 @@ RUN set -eux; \
 		libxml2-dev \
 		libxpm-dev \
 		libxslt-dev \
-		postgresql17-dev \
+		postgresql18-dev \
 	; \
 	\
 	docker-php-ext-configure \

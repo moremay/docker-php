@@ -156,7 +156,7 @@ RUN set -eux; \
 		libxslt-dev \
 		libzip-dev \
 		linux-headers \
-		postgresql17-dev \
+		postgresql18-dev \
 		unixodbc-dev \
 	; \
 	\
