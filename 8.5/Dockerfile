@@ -20,7 +20,7 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 RUN apk add --allow-untrusted --no-cache \
 	busybox~1.37.0-r31 \
 	zlib-dev \
-	curl~8.18.0-r0 openssl
+	curl~8.19.0-r0 openssl
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
@@ -29,11 +29,11 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 RUN set -ex; \
 	docker-lib download /usr/src/php \
-		"https://www.php.net/distributions/php-8.5.3.tar.xz" \
-		"ce65725b8af07356b69a6046d21487040b11f2acfde786de38b2bfb712c36eb9"
+		"https://www.php.net/distributions/php-8.5.4.tar.xz" \
+		"c1569f1f543f6b025c583cdc0e730e5c5833c603618613f1aa8e75d1524b8c91"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.3
+ENV PHP_VERSION=8.5.4
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
@@ -224,7 +224,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.3
+ENV PHP_VERSION=8.5.4
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"

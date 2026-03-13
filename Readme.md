@@ -10,8 +10,8 @@ Build images for php-fpm.
   + php 5.4.45
   + php 5.6.40
   + php 7.4.33
-  + php 8.4.18 2026-02-12
-  + php 8.5.3 2026-02-12
+  + php 8.4.19 2026-03-12
+  + php 8.5.4 2026-03-12
 + ext. :
   + add shared :
   bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, pdo_pgsql, pgsql, redis, sockets, sodium, timezonedb, xsl, zip
