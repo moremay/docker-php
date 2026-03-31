@@ -20,7 +20,8 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 
 RUN apk add --allow-untrusted --no-cache \
 	busybox~1.37.0-r31 \
-	zlib-dev openssl
+	zlib-dev openssl \
+	nghttp2~1.68.1-r0
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
@@ -218,7 +219,7 @@ RUN set -eux; \
 		icu-dev \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
-		libpng-dev~1.6.55-r0 \
+		libpng-dev \
 		libvpx-dev \
 		libxml2-dev \
 		libxpm-dev \
