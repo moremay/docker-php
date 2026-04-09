@@ -15,11 +15,11 @@ Build images for php-fpm.
 + ext. :
   + add shared :
   bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, pdo_pgsql, pgsql, redis, sockets, sodium, timezonedb, xsl, zip
-  + iconv &nbsp;&nbsp;&nbsp;&nbsp; gnu libiconv 1.18
+  + iconv &nbsp;&nbsp;&nbsp;&nbsp; gnu libiconv 1.19
   + mcrypt &nbsp;&nbsp; php 5. php 7, 8: Alternatives: Sodium/OpenSSL
   + mysql &nbsp;&nbsp;&nbsp;&nbsp; php 5. php 7, 8: Alternatives: mysqli
   + odbc &nbsp;&nbsp;&nbsp;&nbsp; php 7, 8: unixODBC
-  + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.8.4); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.8.4); php 8: openssl 3.5.5
+  + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.9.1); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.9.1); php 8: openssl 3.5.6
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
   php 5: 2.2.25; php 7.4, 8: latest 2.9.5

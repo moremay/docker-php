@@ -1,15 +1,13 @@
 ARG mirrors=
-ARG gnu_mirrors=http://ftp.gnu.org/pub/gnu
 ARG TZ=
 
 FROM alpine:3.23 AS builder
 
 ARG mirrors
-ARG gnu_mirrors
 ARG TZ
 
-COPY docker-* /usr/local/bin/
-COPY x86_64 /usr/src/repo/x86_64
+COPY script/docker-* /usr/local/bin/
+COPY apk/x86_64 /usr/src/repo/x86_64
 
 RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories; \
 	if [ -n "${mirrors}" ]; then \
@@ -18,9 +16,10 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 	echo '/usr/src/repo/' >> /etc/apk/repositories
 
 RUN apk add --allow-untrusted --no-cache \
+	# edge
 	busybox~1.37.0-r31 \
-	zlib-dev \
-	curl~8.19.0-r0 openssl \
+	curl=8.19.0-r0 \
+	openssl~3.5.6-r0 \
 	nghttp2~1.68.1-r0
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
@@ -49,6 +48,7 @@ RUN set -eux; \
 		openssl-dev \
 		readline-dev \
 		sqlite-dev \
+		zlib-dev \
 		; \
 	rm -vf /usr/include/iconv.h; \
 	\
@@ -215,7 +215,7 @@ RUN set -eux; \
 	composer --version
 
 RUN find /usr/local/include/* -type d ! -path "*/php" -maxdepth 0 -exec rm -rf {} \;
-RUN rm -rf /usr/src/repo
+RUN rm -rf /usr/src/repo /usr/share/man/* /usr/share/doc/*
 
 FROM scratch
 LABEL org.opencontainers.image.authors="moremay"

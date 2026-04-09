@@ -9,8 +9,8 @@ ARG mirrors
 ARG gnu_mirrors
 ARG TZ
 
-COPY docker-* /usr/local/bin/
-COPY x86_64 /usr/src/repo/x86_64
+COPY script/docker-* /usr/local/bin/
+COPY apk/x86_64 /usr/src/repo/x86_64
 
 RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories; \
 	if [ -n "${mirrors}" ]; then \
@@ -18,57 +18,22 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 	fi; \
 	echo '/usr/src/repo/' >> /etc/apk/repositories
 
+ENV VER_WOLFSSL=5.9.1-r100
+ENV VER_CURL=8.19.0-r100
+
 RUN apk add --allow-untrusted --no-cache \
+	# edge
 	busybox~1.37.0-r31 \
-	zlib-dev openssl \
-	nghttp2~1.68.1-r0
+	openssl~3.5.6-r0 \
+	nghttp2~1.68.1-r0 \
+	# local
+	wolfssl=${VER_WOLFSSL} \
+	curl=${VER_CURL}
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
-
-RUN set -eux; \
-	. docker-lib init "wolfssl" \
-		"https://github.com/wolfSSL/wolfssl/archive/refs/tags/v5.8.4-stable.tar.gz" \
-		"2b702b7a66b0067bfd284408827b1e59288b357b0dd758d0089c062395f2a522" \
-		automake libtool linux-headers util-linux-misc \
-		; \
-	./autogen.sh; \
-	./configure --prefix=$TARGET \
-		--enable-curl \
-		--enable-shared \
-		--disable-opensslall \
-		--disable-opensslextra \
-		--disable-examples \
-		; \
-	docker-lib make
-
-RUN set -eux; \
-	. docker-lib init "curl" \
-		"https://curl.se/download/curl-8.18.0.tar.xz" \
-		"40df79166e74aa20149365e11ee4c798a46ad57c34e4f68fd13100e2c9a91946" \
-		brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zstd-dev \
-		; \
-	./configure --prefix=$TARGET \
-		# replace openssl
-		--with-wolfssl \
-		--enable-ares \
-		--enable-ipv6 \
-		--enable-unix-sockets \
-		--enable-shared \
-		--with-libidn2 \
-		--with-nghttp2 \
-		--with-ca-bundle=/etc/ssl/cert.pem \
-		--with-ca-path=/etc/ssl/certs \
-		--with-zsh-functions-dir \
-		--with-fish-functions-dir \
-		--disable-ldap \
-		--with-pic \
-		--enable-websockets \
-		--without-libssh2 \
-		; \
-	docker-lib make
 
 ENV PHP_SSL=/usr/local/ssl1.1
 
@@ -82,10 +47,11 @@ RUN set -eux; \
 	docker-lib make; \
 	rm -rf ${TARGET}/ssl/man
 
+# php7: /usr/local
 RUN set -eux; \
 	. docker-lib init "libiconv" \
-		"${gnu_mirrors}/libiconv/libiconv-1.18.tar.gz" \
-		"3b08f5f4f9b4eb82f151a7040bfd6fe6c6fb922efe4b1659c66ea933276965e8"; \
+		"${gnu_mirrors}/libiconv/libiconv-1.19.tar.gz" \
+		"88dd96a8c0464eca144fc791ae60cd31cd8ee78321e67397e25fc095c4a19aa6"; \
 	./configure --prefix=$TARGET; \
 	docker-lib make
 
@@ -108,6 +74,7 @@ RUN set -eux; \
 		oniguruma-dev \
 		readline-dev \
 		sqlite-dev \
+		zlib-dev \
 		; \
 	\
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
@@ -203,7 +170,7 @@ RUN set -eux; \
 RUN set -eux; \
 	. docker-lib php-init \
 		bzip2-dev \
-		curl-dev \
+		curl-dev=${VER_CURL} \
 		freetype-dev \
 		gettext-dev \
 		gmp-dev \
@@ -217,8 +184,8 @@ RUN set -eux; \
 		libzip-dev \
 		unixodbc-dev \
 		postgresql18-dev \
-		# curl
-		#brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev zlib-dev zstd-dev \
+		#brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev  zstd-dev \
+		zlib-dev \
 	; \
 	docker-lib download "ext/redis" \
 		"https://github.com/phpredis/phpredis/archive/refs/tags/6.2.0.tar.gz" \
@@ -270,7 +237,7 @@ RUN set -eux; \
 	composer --version
 
 RUN find /usr/local/include/* -type d ! -path "*/php" -maxdepth 0 -exec rm -rf {} \;
-RUN rm -rf /usr/src/repo
+RUN rm -rf /usr/src/repo /usr/share/man/* /usr/share/doc/*
 
 FROM scratch
 LABEL org.opencontainers.image.authors="moremay"

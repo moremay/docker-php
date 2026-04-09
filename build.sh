@@ -22,7 +22,7 @@ IMAGE_REPO="php"
 IMAGE_TAG="$work"
 TEST_WEB=
 PUSH=
-params=()
+params=("-f" "$work/Dockerfile")
 
 if [ -f "$work/tag" ]; then
   tag_tmp=$(< "$work/tag")
@@ -56,9 +56,9 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-echo "Enter $work"
-pushd "$work" >/dev/null
-trap "echo Leave $work; popd >/dev/null" EXIT
+#echo "Enter $work"
+#pushd "$work" >/dev/null
+#trap "echo Leave $work; popd >/dev/null" EXIT
 
 user=$(docker info | grep 'Username' | awk '{print $2}')
 [ -z "$user" ] || user="$user/"
@@ -70,12 +70,12 @@ fi
 
 default_image="${user}${IMAGE_REPO}:$IMAGE_TAG"
 images="-t $default_image"
-if [ -f .latest ]; then
+if [ -f "$work/.latest" ]; then
     images="$images -t ${user}${IMAGE_REPO}:${IMAGE_TAG%%.*}"
 fi
 
-cp -uvf ../script/* .
-cp -ruvf ../apk/x86_64 .
+#cp -uvf ../script/* .
+#test -d x86_64 || ln -rs ../apk/x86_64 x86_64
 
 instance_name=provenance-builder
 docker buildx use $instance_name || docker buildx create --name $instance_name --use
@@ -84,7 +84,7 @@ if [ -n "$PUSH" ]; then
 fi
 docker buildx build . --load $images "${params[@]}"
 
-rm -rf ./docker-* ./x86_64
+#rm -rf ./docker-*
 
 if [ -n "$TEST_WEB" ]; then
   docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v ~/trivy-cache:/root/.cache/ aquasec/trivy image $default_image
