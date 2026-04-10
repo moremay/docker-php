@@ -19,7 +19,7 @@ LATEST_DIR=""
 CURRENT_VERSION=""
 for dir in 8.*; do
     if [ -d "$dir" ] && [ -f "$dir/.latest" ]; then
-        LATEST_DIR="$dir"
+        LATEST_DIR="$(basename "$dir" | sed -E 's/([.])/\\\1/')"
         CURRENT_VERSION=$(grep 'PHP_VERSION=' "$dir/Dockerfile" | head -1 | sed -E 's/.*PHP_VERSION=([0-9.]+).*/\1/')
         break
     fi
@@ -27,9 +27,8 @@ done
 
 echo ""
 echo "[获取 PHP 最新版本]"
-GITHUB_TAG=$(curl -s https://api.github.com/repos/php/php-src/releases | grep 'tag_name' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
 # 提取版本号（去除前缀如php-）
-GITHUB_VERSION=$(echo "$GITHUB_TAG" | sed -E 's/^php-([0-9.]+)$/\1/')
+GITHUB_VERSION="$(curl -s https://api.github.com/repos/php/php-src/releases | grep 'tag_name.*'$LATEST_DIR'\.' | head -1 | sed -E 's/.*"php-([0-9.]+)".*/\1/')"
 echo "PHP 版本: $CURRENT_VERSION"
 echo "GitHub PHP 最新版本: $GITHUB_VERSION"
 
