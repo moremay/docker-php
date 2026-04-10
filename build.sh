@@ -21,6 +21,7 @@ BIN_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 IMAGE_REPO="php"
 IMAGE_TAG="$work"
 TEST_WEB=
+CLEAR_BUILDX=
 PUSH=
 params=("-f" "$work/Dockerfile")
 
@@ -48,6 +49,9 @@ while [ $# -gt 0 ]; do
     ;;
   -t|--test)
     TEST_WEB="yes"
+    ;;
+  -c|--clear)
+    CLEAR_BUILDX="yes"
     ;;
   *)
     params=("${params[@]}" "$1")
@@ -78,7 +82,16 @@ fi
 #test -d x86_64 || ln -rs ../apk/x86_64 x86_64
 
 instance_name=provenance-builder
-docker buildx use $instance_name || docker buildx create --name $instance_name --use
+
+if docker buildx ls | grep -qs "$instance_name"; then
+  if [ -n "$CLEAR_BUILDX" ]; then
+    docker buildx prune -af || :
+  fi
+  docker buildx use $instance_name
+else
+  docker buildx create --name $instance_name --use
+fi
+
 if [ -n "$PUSH" ]; then
   docker buildx build . --provenance=mode=max --sbom=true --push $images "${params[@]}"
 fi
