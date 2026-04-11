@@ -1,12 +1,10 @@
 # syntax=docker/dockerfile:1.4
 ARG mirrors=
-ARG gnu_mirrors=http://ftp.gnu.org/pub/gnu
 ARG TZ=
 
 FROM alpine:3.23 AS builder
 
 ARG mirrors
-ARG gnu_mirrors
 ARG TZ
 
 COPY script/docker-* /usr/local/bin/
@@ -23,14 +21,15 @@ ENV VER_CURL=8.19.0-r100
 
 RUN apk add --allow-untrusted --no-cache \
 	# edge
+	musl~1.2.6-r2 \
+	musl-utils~1.2.6-r2 \
 	busybox~1.37.0-r31 \
-	openssl~3.5.6-r0 \
 	nghttp2~1.68.1-r0 \
 	# local
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL}
 
-ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
+ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
@@ -50,7 +49,7 @@ RUN set -eux; \
 # php7: /usr/local
 RUN set -eux; \
 	. docker-lib init "libiconv" \
-		"${gnu_mirrors}/libiconv/libiconv-1.19.tar.gz" \
+		"http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.19.tar.gz" \
 		"88dd96a8c0464eca144fc791ae60cd31cd8ee78321e67397e25fc095c4a19aa6"; \
 	./configure --prefix=$TARGET; \
 	docker-lib make
@@ -76,6 +75,7 @@ RUN set -eux; \
 		sqlite-dev \
 		zlib-dev \
 		; \
+	rm -vf /usr/include/iconv.h; \
 	\
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
 	cp -v php.ini-* "$PHP_INI_DIR/"; \
@@ -188,12 +188,12 @@ RUN set -eux; \
 		zlib-dev \
 	; \
 	docker-lib download "ext/redis" \
-		"https://github.com/phpredis/phpredis/archive/refs/tags/6.2.0.tar.gz" \
-		"470333b27cbf9485d36b610b81300c06491a6575f22c6801a9cefc55285ed123" \
+		"https://github.com/phpredis/phpredis/archive/refs/tags/6.3.0.tar.gz" \
+		"cb8f81df1a275599e4f8ddcfec7e1f65ed1953e6f5673649149fd680ebff4cad" \
 		tar; \
 	docker-lib download "ext/timezonedb" \
-		"https://pecl.php.net/get/timezonedb-2025.2.tgz" \
-		"ae32b224a843df303d61bffbf38ce325e0ca6117b92a974a101a6729d1ce5fea" \
+		"https://pecl.php.net/get/timezonedb-2026.1.tgz" \
+		"ca53eeed51c21ff8ade4ed52cc4095a13eec4037682a3c3fb3947f61108f5091" \
 		tar; \
 	\
 	docker-php-ext-configure gd \

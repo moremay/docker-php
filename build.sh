@@ -34,7 +34,7 @@ shift
 while [ $# -gt 0 ]; do
   case $1 in
   -m|--mirrors)
-    params=("${params[@]}" --build-arg mirrors=mirrors.nju.edu.cn --build-arg gnu_mirrors=https://mirrors.nju.edu.cn/gnu)
+    params=("${params[@]}" --build-arg mirrors=mirrors.nju.edu.cn)
     ;;
   -p|--push)
     PUSH=yes
