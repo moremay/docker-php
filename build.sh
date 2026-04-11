@@ -60,10 +60,6 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-#echo "Enter $work"
-#pushd "$work" >/dev/null
-#trap "echo Leave $work; popd >/dev/null" EXIT
-
 user=$(docker info | grep 'Username' | awk '{print $2}')
 [ -z "$user" ] || user="$user/"
 
@@ -77,9 +73,6 @@ images="-t $default_image"
 if [ -f "$work/.latest" ]; then
     images="$images -t ${user}${IMAGE_REPO}:${IMAGE_TAG%%.*}"
 fi
-
-#cp -uvf ../script/* .
-#test -d x86_64 || ln -rs ../apk/x86_64 x86_64
 
 instance_name=provenance-builder
 
@@ -96,8 +89,6 @@ if [ -n "$PUSH" ]; then
   docker buildx build . --provenance=mode=max --sbom=true --push $images "${params[@]}"
 fi
 docker buildx build . --load $images "${params[@]}"
-
-#rm -rf ./docker-*
 
 if [ -n "$TEST_WEB" ]; then
   docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v ~/trivy-cache:/root/.cache/ aquasec/trivy image $default_image
