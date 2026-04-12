@@ -20,14 +20,12 @@ ENV VER_WOLFSSL=5.9.1-r100
 ENV VER_CURL=8.19.0-r100
 
 RUN apk add --allow-untrusted --no-cache \
-	# edge
+	wolfssl=${VER_WOLFSSL} \
+	curl=${VER_CURL} \
 	musl~1.2.6-r2 \
 	musl-utils~1.2.6-r2 \
 	busybox~1.37.0-r31 \
-	nghttp2~1.68.1-r0 \
-	# local
-	wolfssl=${VER_WOLFSSL} \
-	curl=${VER_CURL}
+	nghttp2~1.68.1-r0
 
 ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
@@ -46,7 +44,8 @@ RUN set -eux; \
 	docker-lib make; \
 	rm -rf ${TARGET}/ssl/man
 
-# php7: /usr/local
+# php5, 7: /usr/local
+# php8等待alpine更新
 RUN set -eux; \
 	. docker-lib init "libiconv" \
 		"http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.19.tar.gz" \
@@ -74,16 +73,16 @@ RUN set -eux; \
 		readline-dev \
 		sqlite-dev \
 		zlib-dev \
-		; \
+	; \
 	rm -vf /usr/include/iconv.h; \
 	\
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
 	cp -v php.ini-* "$PHP_INI_DIR/"; \
 	export \
-		PKG_CONFIG_PATH="/usr/local/ssl1.1/lib/pkgconfig" \
 		CFLAGS="$PHP_CFLAGS" \
 		CPPFLAGS="$PHP_CPPFLAGS" \
 		LDFLAGS="$PHP_LDFLAGS -Wl,--enable-new-dtags,-R,${PHP_SSL}/lib:/usr/local/lib" \
+		PKG_CONFIG_PATH="/usr/local/ssl1.1/lib/pkgconfig" \
 	; \
 	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
 	./configure \
@@ -100,19 +99,17 @@ RUN set -eux; \
 		--enable-mbregex \
 		--enable-mbstring \
 		--enable-mysqlnd \
-		--with-mhash \
-		--with-pic \
-		--with-password-argon2 \
-		--with-sodium=shared \
-		\
-		--with-pdo-sqlite=/usr \
-		--with-sqlite3=/usr \
-		\
 		--with-iconv=/usr/local \
 		--with-libxml \
+		--with-mhash \
 		--with-openssl=${PHP_SSL} \
+		--with-password-argon2 \
+		--with-pdo-sqlite=/usr \
 		--with-pear \
+		--with-pic \
 		--with-readline \
+		--with-sodium=shared \
+		--with-sqlite3=/usr \
 		--with-zlib \
 	; \
 	docker-lib make; \
@@ -125,7 +122,7 @@ RUN set -eux; \
 	php -v
 
 RUN set -eux; \
-	mkdir -p "$(php -r "echo ini_get('extension_dir');")"; \
+	mkdir -p /usr/local/etc/php-fpm.d "$(php -r "echo ini_get('extension_dir');")"; \
 	cd /usr/local/etc; \
 	# /usr/local/etc
 	sed 's!=NONE/!=!g' php-fpm.conf.default | tee php-fpm.conf > /dev/null; \
@@ -160,11 +157,11 @@ RUN set -eux; \
 	{ \
 		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
 		echo 'fastcgi.logging = Off'; \
-	} > "docker-fpm.ini"; \
+	} > docker-fpm.ini; \
 	{ \
 		echo '[Date]'; \
 		echo 'date.timezone = ${TZ}'; \
-	} > "timezone.ini"; \
+	} > timezone.ini; \
 	echo "expose_php = Off" > disable-x-powered-by.ini
 
 RUN set -eux; \
@@ -182,11 +179,11 @@ RUN set -eux; \
 		libxpm-dev \
 		libxslt-dev \
 		libzip-dev \
-		unixodbc-dev \
 		postgresql18-dev \
-		#brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev  zstd-dev \
+		unixodbc-dev \
 		zlib-dev \
 	; \
+	\
 	docker-lib download "ext/redis" \
 		"https://github.com/phpredis/phpredis/archive/refs/tags/6.3.0.tar.gz" \
 		"cb8f81df1a275599e4f8ddcfec7e1f65ed1953e6f5673649149fd680ebff4cad" \
@@ -250,7 +247,7 @@ ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=7.4.33
 ENV PHP_INI_DIR=/usr/local/etc/php
 
-ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
+ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"

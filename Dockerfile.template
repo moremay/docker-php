@@ -15,22 +15,44 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi; \
 	echo '/usr/src/repo/' >> /etc/apk/repositories
+#{{if ver < 8 }}
 
 ENV VER_WOLFSSL=5.9.1-r100
 ENV VER_CURL=8.19.0-r100
+#{{fi}}
 
 RUN apk add --allow-untrusted --no-cache \
+#{{if ver < 8 }}
+	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
+#{{else}}
+	curl~8.19.0-r0 \
+#{{fi}}
 	musl~1.2.6-r2 \
 	musl-utils~1.2.6-r2 \
 	busybox~1.37.0-r31 \
 	nghttp2~1.68.1-r0
 
-ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch"
-ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
+ENV PHPIZE_DEPS="#{{PHPIZE_DEPS}}"
+ENV PHP_CFLAGS="#{{PHP_CFLAGS}}"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
+#{{case ver}}
+	#{{when 7.4}}
+
+ENV PHP_SSL=/usr/local/ssl1.1
+
+RUN set -eux; \
+	TARGET="${PHP_SSL}"; \
+	. docker-lib init 'openssl-1.1' \
+		"https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz" \
+		'cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8' \
+		linux-headers; \
+	./config shared --prefix=${TARGET} --openssldir=${TARGET}/ssl; \
+	docker-lib make; \
+	rm -rf ${TARGET}/ssl/man
+	#{{when 5.6, 5.4}}
 
 ENV PHP_SSL=/usr/local/ssl1.0
 
@@ -43,6 +65,7 @@ RUN set -ex; \
 	# make test failed
 	docker-lib make; \
 	rm -rf ${TARGET}/ssl/man
+#{{endcase}}
 
 # php5, 7: /usr/local
 # php8等待alpine更新
@@ -52,6 +75,7 @@ RUN set -eux; \
 		"88dd96a8c0464eca144fc791ae60cd31cd8ee78321e67397e25fc095c4a19aa6"; \
 	./configure --prefix=$TARGET; \
 	docker-lib make
+#{{if ver < 7 }}
 
 RUN set -eux; \
 	. docker-lib init "zlib-1.2" \
@@ -79,21 +103,37 @@ RUN set -ex; \
 		"32427e8c471ac095853212a37aef816c60b42052d4d9e48230bab3bdf2936ccc"; \
 	./configure --prefix=$TARGET --enable-freetype-config; \
 	docker-lib make
+#{{fi}}
 
 RUN set -ex; \
 	docker-lib download /usr/src/php \
-		"https://www.php.net/distributions/php-5.6.40.tar.xz" \
-		"1369a51eee3995d7fbd1c5342e5cc917760e276d561595b6052b21ace2656d1c"
+		"#{{php_url}}" \
+		"#{{php_sha256}}"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=5.6.40
+ENV PHP_VERSION=#{{php_ver}}
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
 	. docker-lib php-init \
+#{{if ver < 7}}
 		curl-dev=${VER_CURL} \
 		readline-dev \
 		sqlite-dev \
+#{{else}}
+		argon2-dev \
+		coreutils \
+		libsodium-dev \
+		libxml2-dev \
+		linux-headers \
+		oniguruma-dev \
+	#{{if ver >=8 }}
+		openssl-dev \
+	#{{fi}}
+		readline-dev \
+		sqlite-dev \
+		zlib-dev \
+#{{fi}}
 	; \
 	rm -vf /usr/include/iconv.h; \
 	\
@@ -102,22 +142,38 @@ RUN set -eux; \
 	export \
 		CFLAGS="$PHP_CFLAGS" \
 		CPPFLAGS="$PHP_CPPFLAGS" \
+#{{if ver == 7.4 }}
+		LDFLAGS="$PHP_LDFLAGS -Wl,--enable-new-dtags,-R,${PHP_SSL}/lib:/usr/local/lib" \
+		PKG_CONFIG_PATH="/usr/local/ssl1.1/lib/pkgconfig" \
+	#{{else}}
 		LDFLAGS="$PHP_LDFLAGS" \
+#{{fi}}
 	; \
+#{{if ver >=7 }}
+	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
+#{{fi}}
 	./configure \
 		--with-config-file-path="$PHP_INI_DIR" \
 		--with-config-file-scan-dir="$PHP_INI_DIR/conf.d" \
+#{{if ver >=7 }}
+		--build="$gnuArch" \
+#{{fi}}
+#{{if ver >=5.6 }}
 		--enable-option-checking=fatal \
+#{{fi}}
 		--disable-cgi \
 		--disable-phpdbg \
 		--enable-fpm \
 		--with-fpm-user=www-data \
 		--with-fpm-group=www-data \
 		\
+#{{if ver < 7}}
 		--enable-ftp \
+#{{fi}}
 		--enable-mbregex \
 		--enable-mbstring \
 		--enable-mysqlnd \
+#{{if ver < 7}}
 		--with-curl=/usr \
 		--with-iconv=/usr/local \
 		--with-libxml-dir=/usr/local \
@@ -130,33 +186,80 @@ RUN set -eux; \
 		--with-readline \
 		--with-sqlite3=/usr \
 		--with-zlib=/usr/local \
+#{{else}}
+		--with-iconv=/usr/local \
+		--with-libxml \
+		--with-mhash \
+	#{{if ver < 8}}
+		--with-openssl=${PHP_SSL} \
+	#{{ else}}
+		--with-openssl \
+	#{{fi}}
+		--with-password-argon2 \
+		--with-pdo-sqlite=/usr \
+		--with-pear \
+		--with-pic \
+		--with-readline \
+		--with-sodium=shared \
+		--with-sqlite3=/usr \
+		--with-zlib \
+#{{fi}}
 	; \
 	docker-lib make; \
+#{{case ver}}
+	#{{when 7.4, 8.4}}
+	\
+	docker-php-ext-enable \
+		sodium \
+		opcache \
+	; \
+	\
+	#{{when 8.5}}
+	\
+	docker-php-ext-enable \
+		sodium \
+	; \
+	\
+#{{endcase}}
 	php -v
 
 RUN set -eux; \
 	mkdir -p /usr/local/etc/php-fpm.d "$(php -r "echo ini_get('extension_dir');")"; \
 	cd /usr/local/etc; \
 	# /usr/local/etc
+#{{if ver >= 7}}
+	sed 's!=NONE/!=!g' php-fpm.conf.default | tee php-fpm.conf > /dev/null; \
+	cp php-fpm.d/www.conf.default php-fpm.d/www.conf; \
+	#{{else}}
 	cp php-fpm.conf.default php-fpm.d/www.conf; \
 	{ \
 		echo '[global]'; \
 		echo 'include=etc/php-fpm.d/*.conf'; \
 	} | tee php-fpm.conf; \
+#{{fi}}
 	# /usr/local/etc/php-fpm.d
 	{ \
 		echo '[global]'; \
 		echo 'error_log = /proc/self/fd/2'; \
+#{{if ver >= 7.4}}
+		echo '; https://github.com/docker-library/php/pull/725#issuecomment-443540114'; \
+		echo 'log_limit = 8192'; \
+#{{fi}}
 		echo; \
 		echo '[www]'; \
 		echo '; php-fpm closes STDOUT on startup, so sending logs to /proc/self/fd/1 does not work.'; \
 		echo '; https://bugs.php.net/bug.php?id=73886'; \
 		echo 'access.log = /proc/self/fd/2'; \
+#{{if ver > 5.4}}
 		echo; \
 		echo 'clear_env = no'; \
+#{{fi}}
 		echo; \
 		echo '; Ensure worker stdout and stderr are sent to the main error log.'; \
 		echo 'catch_workers_output = yes'; \
+#{{if ver >= 7.4}}
+		echo 'decorate_workers_output = no'; \
+#{{fi}}
 	} | tee php-fpm.d/docker.conf; \
 	{ \
 		echo '[global]'; \
@@ -179,6 +282,33 @@ RUN set -eux; \
 
 RUN set -eux; \
 	. docker-lib php-init \
+#{{if ver > 7}}
+		bzip2-dev \
+	#{{if ver == 7.4}}
+		curl-dev=${VER_CURL} \
+	#{{else}}
+		curl-dev \
+	#{{fi}}
+		freetype-dev \
+		gettext-dev \
+		gmp-dev \
+		icu-dev \
+	#{{if ver >= 8}}
+		libavif-dev \
+	#{{fi}}
+		libjpeg-turbo-dev \
+		libmcrypt-dev \
+		libpng-dev \
+		libwebp-dev \
+		libxpm-dev \
+		libxslt-dev \
+		libzip-dev \
+	#{{if ver > 8}}
+		linux-headers \
+	#{{fi}}
+		postgresql18-dev \
+		unixodbc-dev \
+#{{else}}
 		bzip2-dev \
 		gettext-dev \
 		gmp-dev \
@@ -191,8 +321,72 @@ RUN set -eux; \
 		libxpm-dev \
 		libxslt-dev \
 		postgresql18-dev \
+#{{fi}}
+#{{if ver == 7.4}}
+		zlib-dev \
+#{{fi}}
 	; \
 	\
+#{{if ver == 5.4}}
+	docker-php-ext-configure \
+		mysql \
+		--with-mysql=mysqlnd \
+	; \
+	\
+	docker-php-ext-configure \
+		mysqli \
+		--with-mysqli=mysqlnd \
+	; \
+	\
+	docker-php-ext-configure \
+		pdo_mysql \
+		--with-pdo-mysql=mysqlnd \
+	; \
+	\
+	sed -e 's/ IMG_FMT_I420,/ VPX_IMG_FMT_I420,/' -e 's/\[PLANE_/\[VPX_PLANE_/' -i ext/gd/libgd/webpimg.c; \
+#{{fi}}
+#{{if ver >= 7.4}}
+	docker-lib download "ext/redis" \
+		"https://github.com/phpredis/phpredis/archive/refs/tags/6.3.0.tar.gz" \
+		"cb8f81df1a275599e4f8ddcfec7e1f65ed1953e6f5673649149fd680ebff4cad" \
+		tar; \
+	docker-lib download "ext/timezonedb" \
+		"https://pecl.php.net/get/timezonedb-2026.1.tgz" \
+		"ca53eeed51c21ff8ade4ed52cc4095a13eec4037682a3c3fb3947f61108f5091" \
+		tar; \
+	\
+	docker-php-ext-configure gd \
+	#{{if ver >= 8}}
+		--with-avif \
+	#{{fi}}
+		--with-freetype \
+		--with-jpeg \
+		--with-webp \
+		--with-xpm \
+	; \
+	docker-php-ext-configure pdo_odbc \
+		--with-pdo-odbc=unixODBC,/usr; \
+	\
+	docker-php-ext-install \
+		bcmath \
+		bz2 \
+		curl \
+		exif \
+		gd \
+		gettext \
+		gmp \
+		mysqli \
+		pdo_mysql \
+		pdo_odbc \
+		pdo_pgsql \
+		pgsql \
+		redis \
+		sockets \
+		timezonedb \
+		xsl \
+		zip \
+	; \
+#{{else}}
 	docker-php-ext-configure gd \
 		--enable-gd-native-ttf \
 		--with-freetype-dir=/usr/local \
@@ -213,7 +407,9 @@ RUN set -eux; \
 		mcrypt \
 		mysql \
 		mysqli \
+	#{{if ver == 5.6}}
 		opcache \
+	#{{fi}}
 		pdo_mysql \
 		pdo_pgsql \
 		pgsql \
@@ -221,9 +417,11 @@ RUN set -eux; \
 		xsl \
 		zip \
 	; \
+#{{fi}}
 	\
 	docker-lib prune
 
+#{{if ver < 7}}
 RUN set -eux; \
 	. docker-lib php-init; \
 	\
@@ -234,9 +432,15 @@ RUN set -eux; \
 	pecl install \
 		redis-4.3.0 \
 		timezonedb \
+	#{{if ver == 5.4}}
+		ZendOpcache \
+	#{{fi}}
 	; \
 	\
 	docker-php-ext-enable \
+	#{{if ver == 5.4}}
+		opcache \
+	#{{fi}}
 		redis \
 		timezonedb \
 	; \
@@ -244,10 +448,16 @@ RUN set -eux; \
 	rm -rf ~/.pearrc; \
 	docker-lib prune
 
+#{{fi}}
 RUN set -eux; \
 	FILE_PATH="/usr/local/bin/composer";\
+#{{if ver < 7}}
 	FILE_SHA256='8b3f41253363f0645402d1951d6e7f02adedeef29c16de6074763e463e25c23f'; \
 	curl -Lko "$FILE_PATH" https://getcomposer.org/download/2.2.25/composer.phar; \
+	#{{else}}
+	FILE_SHA256="$(curl -Lk https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
+	curl -Lko "$FILE_PATH" https://getcomposer.org/download/latest-stable/composer.phar; \
+#{{fi}}
 	echo "$FILE_SHA256 *$FILE_PATH" | sha256sum -c -; \
 	chmod +x "$FILE_PATH"; \
 	\
@@ -264,11 +474,11 @@ LABEL org.opencontainers.image.licenses="MIT"
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=5.6.40
+ENV PHP_VERSION=#{{php_ver}}
 ENV PHP_INI_DIR=/usr/local/etc/php
 
-ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch"
-ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
+ENV PHPIZE_DEPS="#{{PHPIZE_DEPS}}"
+ENV PHP_CFLAGS="#{{PHP_CFLAGS}}"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 

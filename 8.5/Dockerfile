@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 ARG mirrors=
 ARG TZ=
 
@@ -16,11 +17,10 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 	echo '/usr/src/repo/' >> /etc/apk/repositories
 
 RUN apk add --allow-untrusted --no-cache \
-	# edge
+	curl~8.19.0-r0 \
 	musl~1.2.6-r2 \
 	musl-utils~1.2.6-r2 \
 	busybox~1.37.0-r31 \
-	curl=8.19.0-r0 \
 	nghttp2~1.68.1-r0
 
 ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
@@ -28,7 +28,8 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
-# php8: upto 1.19
+# php5, 7: /usr/local
+# php8等待alpine更新
 RUN set -eux; \
 	. docker-lib init "libiconv" \
 		"http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.19.tar.gz" \
@@ -57,7 +58,7 @@ RUN set -eux; \
 		readline-dev \
 		sqlite-dev \
 		zlib-dev \
-		; \
+	; \
 	rm -vf /usr/include/iconv.h; \
 	\
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
@@ -82,19 +83,17 @@ RUN set -eux; \
 		--enable-mbregex \
 		--enable-mbstring \
 		--enable-mysqlnd \
-		--with-mhash \
-		--with-pic \
-		--with-password-argon2 \
-		--with-sodium=shared \
-		\
-		--with-pdo-sqlite=/usr \
-		--with-sqlite3=/usr \
-		\
 		--with-iconv=/usr/local \
 		--with-libxml \
+		--with-mhash \
 		--with-openssl \
+		--with-password-argon2 \
+		--with-pdo-sqlite=/usr \
 		--with-pear \
+		--with-pic \
 		--with-readline \
+		--with-sodium=shared \
+		--with-sqlite3=/usr \
 		--with-zlib \
 	; \
 	docker-lib make; \
@@ -106,7 +105,7 @@ RUN set -eux; \
 	php -v
 
 RUN set -eux; \
-	mkdir -p "$(php -r "echo ini_get('extension_dir');")"; \
+	mkdir -p /usr/local/etc/php-fpm.d "$(php -r "echo ini_get('extension_dir');")"; \
 	cd /usr/local/etc; \
 	# /usr/local/etc
 	sed 's!=NONE/!=!g' php-fpm.conf.default | tee php-fpm.conf > /dev/null; \
@@ -141,11 +140,11 @@ RUN set -eux; \
 	{ \
 		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
 		echo 'fastcgi.logging = Off'; \
-	} > "docker-fpm.ini"; \
+	} > docker-fpm.ini; \
 	{ \
 		echo '[Date]'; \
 		echo 'date.timezone = ${TZ}'; \
-	} > "timezone.ini"; \
+	} > timezone.ini; \
 	echo "expose_php = Off" > disable-x-powered-by.ini
 
 RUN set -eux; \
@@ -185,12 +184,9 @@ RUN set -eux; \
 		--with-webp \
 		--with-xpm \
 	; \
-	\
 	docker-php-ext-configure pdo_odbc \
-		--with-pdo-odbc=unixODBC,/usr \
-	; \
+		--with-pdo-odbc=unixODBC,/usr; \
 	\
-	sed -e "s#<ext/standard/php_smart_string.h>#<Zend/zend_smart_string.h>#" -i ext/redis/common.h; \
 	docker-php-ext-install \
 		bcmath \
 		bz2 \
@@ -236,7 +232,7 @@ ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=8.5.5
 ENV PHP_INI_DIR=/usr/local/etc/php
 
-ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
+ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"

@@ -9,7 +9,7 @@ DOCKER_IMAGE="moremay/php:8"
 
 # 实时输出trivy结果并统计漏洞数
 TRIVY_OUTPUT_FILE="/tmp/trivy_output.tmp"
-eval "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $TRIVY_CACHE:~/.cache/ $TRIVY_IMAGE image $DOCKER_IMAGE" 2>&1 | tee "$TRIVY_OUTPUT_FILE"
+eval "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $TRIVY_CACHE:/root/.cache/ $TRIVY_IMAGE image $DOCKER_IMAGE" 2>&1 | tee "$TRIVY_OUTPUT_FILE"
 VUL_COUNT=$(grep -E 'Total:|CRITICAL|HIGH|MEDIUM|LOW' "$TRIVY_OUTPUT_FILE" | grep -v 'None' | wc -l)
 echo "$DOCKER_IMAGE 漏洞数: $VUL_COUNT"
 

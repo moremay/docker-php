@@ -20,14 +20,12 @@ ENV VER_WOLFSSL=5.9.1-r100
 ENV VER_CURL=8.19.0-r100
 
 RUN apk add --allow-untrusted --no-cache \
-	# edge
+	wolfssl=${VER_WOLFSSL} \
+	curl=${VER_CURL} \
 	musl~1.2.6-r2 \
 	musl-utils~1.2.6-r2 \
 	busybox~1.37.0-r31 \
-	nghttp2~1.68.1-r0 \
-	# local
-	wolfssl=${VER_WOLFSSL} \
-	curl=${VER_CURL}
+	nghttp2~1.68.1-r0
 
 ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
@@ -46,7 +44,8 @@ RUN set -ex; \
 	docker-lib make; \
 	rm -rf ${TARGET}/ssl/man
 
-# php5: /usr/local
+# php5, 7: /usr/local
+# php8等待alpine更新
 RUN set -eux; \
 	. docker-lib init "libiconv" \
 		"http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.19.tar.gz" \
@@ -124,13 +123,12 @@ RUN set -eux; \
 		--with-mhash \
 		--with-onig \
 		--with-openssl=${PHP_SSL} \
+		--with-pdo-sqlite=/usr \
 		--with-pear \
 		--with-pic \
 		--with-readline \
-		--with-zlib=/usr/local \
-		\
-		--with-pdo-sqlite=/usr \
 		--with-sqlite3=/usr \
+		--with-zlib=/usr/local \
 	; \
 	docker-lib make; \
 	php -v
@@ -208,8 +206,7 @@ RUN set -eux; \
 	; \
 	\
 	sed -e 's/ IMG_FMT_I420,/ VPX_IMG_FMT_I420,/' -e 's/\[PLANE_/\[VPX_PLANE_/' -i ext/gd/libgd/webpimg.c; \
-	docker-php-ext-configure \
-		gd \
+	docker-php-ext-configure gd \
 		--enable-gd-native-ttf \
 		--with-freetype-dir=/usr/local \
 		--with-jpeg-dir \
@@ -284,7 +281,7 @@ ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=5.4.45
 ENV PHP_INI_DIR=/usr/local/etc/php
 
-ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch"
+ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
