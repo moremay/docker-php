@@ -10,6 +10,8 @@ BEGIN {
     output_enabled = 1
     if_depth = 0
     case_depth = 0
+    include_depth = 0
+    max_include_depth = 10
 }
 
 function trim(s) {
@@ -115,25 +117,37 @@ function eval_condition(cond,   left, right, op, pos, parts, val, matched, left_
     return (vars[cond] != "" && vars[cond] != "0")
 }
 
-function handle_directive(cmd,   parts, cond, var_name, val_str, values, matched_any, i, cond_result) {
+function include_file(filename,   line, fname, old_depth) {
+    # 去除可能的引号
+    gsub(/^["']|["']$/, "", filename)
+    if (include_depth >= max_include_depth) {
+        print "Error: include depth exceeded " max_include_depth " (possible loop)" > "/dev/stderr"
+        return
+    }
+    include_depth++
+    # 读取文件
+    while ((getline line < filename) > 0) {
+        process_line(line)
+    }
+    close(filename)
+    include_depth--
+}
+
+function handle_directive(cmd,   parts, cond, var_name, val_str, values, matched_any, i, cond_result, filename) {
     cmd = trim(cmd)
     # if 指令
     if (cmd ~ /^if /) {
         cond = substr(cmd, 4)
         cond_result = eval_condition(cond)
-        # 保存进入 if 前的 output_enabled 和当前条件结果
         if_stack[if_depth] = output_enabled
         cond_stack[if_depth] = cond_result
         if_depth++
-        # 新的输出状态 = 原状态 AND 条件
         output_enabled = output_enabled && cond_result
         return
     }
     if (cmd == "else") {
         if (if_depth > 0) {
-            # 恢复进入 if 前的 output_enabled
             orig = if_stack[if_depth-1]
-            # 条件结果取反
             output_enabled = orig && (!cond_stack[if_depth-1])
         } else {
             print "Error: unmatched #{{else}}" > "/dev/stderr"
@@ -202,7 +216,7 @@ function handle_directive(cmd,   parts, cond, var_name, val_str, values, matched
         return
     }
 
-    # define 指令（可选）
+    # define 指令
     if (cmd ~ /^define /) {
         parts = substr(cmd, 8)
         eq = index(parts, "=")
@@ -214,19 +228,29 @@ function handle_directive(cmd,   parts, cond, var_name, val_str, values, matched
         return
     }
 
+    # include 指令
+    if (cmd ~ /^include /) {
+        filename = trim(substr(cmd, 9))
+        include_file(filename)
+        return
+    }
+
     print "Warning: unknown directive: #{{" cmd "}}" > "/dev/stderr"
 }
 
-{
-    line = $0
+function process_line(line,   stripped, directive) {
     stripped = line
     gsub(/^[ \t]+|[ \t]+$/, "", stripped)
     if (stripped ~ /^#{{[^{}]+}}$/) {
         directive = substr(stripped, 4, length(stripped) - 5)
         handle_directive(directive)
-        next
+        return
     }
     if (output_enabled) {
         print substitute_vars(line)
     }
+}
+
+{
+    process_line($0)
 }
