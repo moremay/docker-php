@@ -3,13 +3,13 @@
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
 echo "[Trivy 漏洞扫描]"
-TRIVY_IMAGE="aquasec/trivy:0.69.3"
+TRIVY_IMAGE="aquasec/trivy"
 TRIVY_CACHE="$HOME/trivy-cache"
 DOCKER_IMAGE="moremay/php:8"
 
 # 实时输出trivy结果并统计漏洞数
 TRIVY_OUTPUT_FILE="/tmp/trivy_output.tmp"
-eval "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $TRIVY_CACHE:/root/.cache/ $TRIVY_IMAGE image $DOCKER_IMAGE" 2>&1 | tee "$TRIVY_OUTPUT_FILE"
+eval "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $TRIVY_CACHE:/root/.cache/ $TRIVY_IMAGE image $DOCKER_IMAGE" | tee "$TRIVY_OUTPUT_FILE"
 VUL_COUNT=$(grep -E 'Total:|CRITICAL|HIGH|MEDIUM|LOW' "$TRIVY_OUTPUT_FILE" | grep -v 'None' | wc -l)
 echo "$DOCKER_IMAGE 漏洞数: $VUL_COUNT"
 
@@ -39,7 +39,7 @@ fi
 
 echo ""
 echo "[获取 Alpine 最新版本]"
-CURRENT_VERSION=$(grep 'family="alpine"' "$TRIVY_OUTPUT_FILE" | head -1 | sed -E 's/.*version="([^"]+)".*/\1/')
+CURRENT_VERSION=$(grep 'alpine' "$TRIVY_OUTPUT_FILE" | head -1 | sed -E 's/.*alpine ([0-9.]+)\).*/\1/')
 ALPINE_VERSION=$(curl -s https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/latest-releases.yaml | grep 'version' | head -1 | grep -o '[0-9.]\+')
 echo "Alpine 版本: $CURRENT_VERSION"
 echo "Alpine 最新版本: $ALPINE_VERSION"
@@ -48,11 +48,6 @@ ALPINE_LOG=""
 if [ "$CURRENT_VERSION" != "$ALPINE_VERSION" ] && [ "$ALPINE_VERSION" != "" ]; then
     ALPINE_LOG="$ALPINE_VERSION"
 fi
-
-LOG_FILE="check-versions.log"
-echo "vul=$VUL_COUNT" > "$LOG_FILE"
-echo "php=$PHP_LOG" >> "$LOG_FILE"
-echo "alpine=$ALPINE_LOG" >> "$LOG_FILE"
 
 echo ""
 echo "[结论]"
