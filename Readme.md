@@ -6,6 +6,7 @@ Thank [docker-library/php](https://github.com/docker-library/php) [Alpine](https
 
 Build images for php-fpm.
 
++ alpine 3.23.4
 + php
   + php 5.4.45
   + php 5.6.40
@@ -22,7 +23,7 @@ Build images for php-fpm.
   + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.9.1); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.9.1); php 8: openssl 3.5.6
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
-  php 5: 2.2.25; php 7.4, 8: latest 2.9.5
+  php 5: 2.2.25; php 7.4, 8: latest 2.9.7
 + phpcs
 
 ```shell
