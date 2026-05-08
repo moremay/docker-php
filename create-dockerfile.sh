@@ -19,17 +19,17 @@ PHPIZE_DEPS_7_8="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf r
 PHP_CFLAGS_5_7="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 PHP_CFLAGS_8="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 
-export TMPL_php_ver=8.5.5
-export TMPL_php_url="https://www.php.net/distributions/php-8.5.5.tar.xz"
-export TMPL_php_sha256="95bec382f4bd00570a8ef52a58ec04d8d9b9a90494781f1c106d1b274a3902f2"
+export TMPL_php_ver=8.5.6
+export TMPL_php_url="https://www.php.net/distributions/php-${TMPL_php_ver}.tar.xz"
+export TMPL_php_sha256="826c600b7c6f956bd335558ca3bdbcab23b22126c1cc8d9348be2280a2204bb7"
 export TMPL_PHPIZE_DEPS="$PHPIZE_DEPS_7_8"
 export TMPL_PHP_CFLAGS="$PHP_CFLAGS_8"
 export TMPL_ver=${TMPL_php_ver%.*}
 create_file $TMPL_ver
 
-export TMPL_php_ver=8.4.20
-export TMPL_php_url="https://www.php.net/distributions/php-8.4.20.tar.xz"
-export TMPL_php_sha256="e454c6f7c89a42f41ebb06dc5c3578e8c8b5f1a3f0da6675665affab04e221f7"
+export TMPL_php_ver=8.4.21
+export TMPL_php_url="https://www.php.net/distributions/php-${TMPL_php_ver}.tar.xz"
+export TMPL_php_sha256="7cf5d8ab12c3b2016875bcfaec71bef1ef0b07bed6148f2c447577074431f984"
 export TMPL_PHPIZE_DEPS="$PHPIZE_DEPS_7_8"
 export TMPL_PHP_CFLAGS="$PHP_CFLAGS_8"
 export TMPL_ver=${TMPL_php_ver%.*}
