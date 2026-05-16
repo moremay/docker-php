@@ -23,6 +23,7 @@ RUN apk add --allow-untrusted --no-cache \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
+	libpq~18.4-r0 \
 	musl~1.2.6-r2 \
 	musl-utils~1.2.6-r2 \
 	busybox~1.37.0-r31
