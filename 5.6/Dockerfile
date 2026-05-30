@@ -23,10 +23,10 @@ RUN apk add --allow-untrusted --no-cache \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
-	libpq~18.4-r0 \
 	musl~1.2.6-r2 \
 	musl-utils~1.2.6-r2 \
-	busybox~1.37.0-r31
+	busybox~1.37.0-r31 \
+	libxml2~2.13.9-r2
 
 ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"

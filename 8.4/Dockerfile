@@ -18,10 +18,10 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 
 RUN apk add --allow-untrusted --no-cache \
 	curl~8.20.0-r1 \
-	libpq~18.4-r0 \
 	musl~1.2.6-r2 \
 	musl-utils~1.2.6-r2 \
-	busybox~1.37.0-r31
+	busybox~1.37.0-r31 \
+	libxml2~2.13.9-r2
 
 ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
