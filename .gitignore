@@ -1,5 +1,1 @@
-*/docker-*
-*/src-*
-x86_64
-!script/*
 *.log

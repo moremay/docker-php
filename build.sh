@@ -91,7 +91,7 @@ fi
 docker buildx build . --load $images "${params[@]}"
 
 if [ -n "$TEST_WEB" ]; then
-  docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v ~/trivy-cache:/root/.cache/ aquasec/trivy image $default_image
+  docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /root/.cache/trivy:/root/.cache/trivy aquasec/trivy image $default_image
   "$BIN_DIR/test.sh" $default_image
 fi
 
