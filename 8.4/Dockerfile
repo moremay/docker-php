@@ -39,11 +39,11 @@ RUN set -eux; \
 
 RUN set -ex; \
 	docker-lib download /usr/src/php \
-		"https://www.php.net/distributions/php-8.4.21.tar.xz" \
-		"7cf5d8ab12c3b2016875bcfaec71bef1ef0b07bed6148f2c447577074431f984"
+		"https://www.php.net/distributions/php-8.4.22.tar.xz" \
+		"696c0f6ad92e94c59059c1eb6e300842b8d050934226efcdf00f2a413cb083cf"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.4.21
+ENV PHP_VERSION=8.4.22
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN set -eux; \
@@ -230,7 +230,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.4.21
+ENV PHP_VERSION=8.4.22
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
