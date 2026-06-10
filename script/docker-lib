@@ -268,7 +268,7 @@ download() {
     fi
 
     mkdir -p "$(dirname "$LIB_PATH")"
-    curl -Lko "$LIB_FILE" "$LIB_URL"
+    curl -sSLko "$LIB_FILE" "$LIB_URL"
     echo "$LIB_SHA256 *$LIB_FILE" | sha256sum -c -
 
     if [ "$action" = "gz" ]; then
@@ -332,7 +332,7 @@ main() {
             local i=1
             local p
             for p in "$@"; do
-                curl -Lko "$i.patch" "$p"
+                curl -sSLko "$i.patch" "$p"
                 patch -p1 < "$i.patch"
                 i=$((i + 1))
             done

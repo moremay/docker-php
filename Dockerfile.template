@@ -2,7 +2,7 @@
 ARG mirrors=
 ARG TZ=
 
-FROM alpine:3.23 AS builder
+FROM alpine:3.24 AS builder
 
 ARG mirrors
 ARG TZ
@@ -11,6 +11,7 @@ COPY script/docker-* /usr/local/bin/
 COPY apk/x86_64 /usr/src/repo/x86_64
 
 RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories; \
+	echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories; \
 	if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi; \
@@ -27,12 +28,9 @@ RUN apk add --allow-untrusted --no-cache \
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
 #{{else}}
-	curl~8.20.0-r1 \
+	curl \
 #{{fi}}
-	musl~1.2.6-r2 \
-	musl-utils~1.2.6-r2 \
-	busybox~1.37.0-r31 \
-	libxml2~2.13.9-r2
+	;
 
 ENV PHPIZE_DEPS="#{{PHPIZE_DEPS}}"
 ENV PHP_CFLAGS="#{{PHP_CFLAGS}}"
@@ -426,7 +424,7 @@ RUN set -eux; \
 	. docker-lib php-init; \
 	\
 	mkdir -p ${PHP_SSL}/ssl; \
-	curl -kLo ${PHP_SSL}/ssl/cert.pem https://curl.se/ca/cacert.pem; \
+	curl -sSkLo ${PHP_SSL}/ssl/cert.pem https://curl.se/ca/cacert.pem; \
 	pecl update-channels; \
 	\
 	pecl install \
@@ -453,10 +451,10 @@ RUN set -eux; \
 	FILE_PATH="/usr/local/bin/composer";\
 #{{if ver < 7}}
 	FILE_SHA256='8b3f41253363f0645402d1951d6e7f02adedeef29c16de6074763e463e25c23f'; \
-	curl -Lko "$FILE_PATH" https://getcomposer.org/download/2.2.25/composer.phar; \
+	curl -sSLko "$FILE_PATH" https://getcomposer.org/download/2.2.25/composer.phar; \
 	#{{else}}
-	FILE_SHA256="$(curl -Lk https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
-	curl -Lko "$FILE_PATH" https://getcomposer.org/download/latest-stable/composer.phar; \
+	FILE_SHA256="$(curl -sSLk https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
+	curl -sSLko "$FILE_PATH" https://getcomposer.org/download/latest-stable/composer.phar; \
 #{{fi}}
 	echo "$FILE_SHA256 *$FILE_PATH" | sha256sum -c -; \
 	chmod +x "$FILE_PATH"; \

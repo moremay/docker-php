@@ -6,7 +6,7 @@ Thank [docker-library/php](https://github.com/docker-library/php) [Alpine](https
 
 Build images for php-fpm.
 
-+ alpine 3.23.4
++ alpine 3.24.0
 + php
   + php 5.4.45
   + php 5.6.40

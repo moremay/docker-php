@@ -2,7 +2,7 @@
 ARG mirrors=
 ARG TZ=
 
-FROM alpine:3.23 AS builder
+FROM alpine:3.24 AS builder
 
 ARG mirrors
 ARG TZ
@@ -11,6 +11,7 @@ COPY script/docker-* /usr/local/bin/
 COPY apk/x86_64 /usr/src/repo/x86_64
 
 RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories; \
+	echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories; \
 	if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi; \
@@ -23,12 +24,9 @@ RUN apk add --allow-untrusted --no-cache \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
-	musl~1.2.6-r2 \
-	musl-utils~1.2.6-r2 \
-	busybox~1.37.0-r31 \
-	libxml2~2.13.9-r2
+	;
 
-ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch"
+ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
@@ -229,7 +227,7 @@ RUN set -eux; \
 	. docker-lib php-init; \
 	\
 	mkdir -p ${PHP_SSL}/ssl; \
-	curl -kLo ${PHP_SSL}/ssl/cert.pem https://curl.se/ca/cacert.pem; \
+	curl -sSkLo ${PHP_SSL}/ssl/cert.pem https://curl.se/ca/cacert.pem; \
 	pecl update-channels; \
 	\
 	pecl install \
@@ -248,7 +246,7 @@ RUN set -eux; \
 RUN set -eux; \
 	FILE_PATH="/usr/local/bin/composer";\
 	FILE_SHA256='8b3f41253363f0645402d1951d6e7f02adedeef29c16de6074763e463e25c23f'; \
-	curl -Lko "$FILE_PATH" https://getcomposer.org/download/2.2.25/composer.phar; \
+	curl -sSLko "$FILE_PATH" https://getcomposer.org/download/2.2.25/composer.phar; \
 	echo "$FILE_SHA256 *$FILE_PATH" | sha256sum -c -; \
 	chmod +x "$FILE_PATH"; \
 	\
@@ -268,7 +266,7 @@ ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=5.6.40
 ENV PHP_INI_DIR=/usr/local/etc/php
 
-ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch"
+ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch"
 ENV PHP_CFLAGS="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"

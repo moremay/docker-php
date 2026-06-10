@@ -2,7 +2,7 @@
 ARG mirrors=
 ARG TZ=
 
-FROM alpine:3.23 AS builder
+FROM alpine:3.24 AS builder
 
 ARG mirrors
 ARG TZ
@@ -11,19 +11,17 @@ COPY script/docker-* /usr/local/bin/
 COPY apk/x86_64 /usr/src/repo/x86_64
 
 RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories; \
+	echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories; \
 	if [ -n "${mirrors}" ]; then \
 		sed "s/dl-cdn.alpinelinux.org/${mirrors}/g" -i /etc/apk/repositories; \
 	fi; \
 	echo '/usr/src/repo/' >> /etc/apk/repositories
 
 RUN apk add --allow-untrusted --no-cache \
-	curl~8.20.0-r1 \
-	musl~1.2.6-r2 \
-	musl-utils~1.2.6-r2 \
-	busybox~1.37.0-r31 \
-	libxml2~2.13.9-r2
+	curl \
+	;
 
-ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
+ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
@@ -212,8 +210,8 @@ RUN set -eux; \
 
 RUN set -eux; \
 	FILE_PATH="/usr/local/bin/composer";\
-	FILE_SHA256="$(curl -Lk https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
-	curl -Lko "$FILE_PATH" https://getcomposer.org/download/latest-stable/composer.phar; \
+	FILE_SHA256="$(curl -sSLk https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
+	curl -sSLko "$FILE_PATH" https://getcomposer.org/download/latest-stable/composer.phar; \
 	echo "$FILE_SHA256 *$FILE_PATH" | sha256sum -c -; \
 	chmod +x "$FILE_PATH"; \
 	\
@@ -233,7 +231,7 @@ ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=8.4.22
 ENV PHP_INI_DIR=/usr/local/etc/php
 
-ENV PHPIZE_DEPS="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
+ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"

@@ -7,14 +7,20 @@ echo "Enter $work"
 pushd "$work" >/dev/null
 trap "echo Leave $work; popd >/dev/null" EXIT
 
+# 工作流挂载到 /mnt/workflows
+if [[ ! -d /mnt/workflows/docker-php ]]; then
+  mkdir -p /mnt/workflows
+  ln -frs "$work" /mnt/workflows/docker-php
+fi
+
 create_file() {
   local ver="$1"
   echo "Create $ver ..."
   awk -f template.awk Dockerfile.template > "$ver/Dockerfile"
 }
 
-PHPIZE_DEPS_5="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch"
-PHPIZE_DEPS_7_8="musl-dev~1.2.6-r2 autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
+PHPIZE_DEPS_5="autoconf file g++ gcc libc-dev make pkgconf re2c patch"
+PHPIZE_DEPS_7_8="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
 
 PHP_CFLAGS_5_7="-std=gnu11 -fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wno-discarded-qualifiers -Wno-incompatible-pointer-types -Wno-compare-distinct-pointer-types -Wno-implicit-int -Wno-implicit-function-declaration"
 PHP_CFLAGS_8="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"

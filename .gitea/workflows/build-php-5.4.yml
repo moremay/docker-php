@@ -8,45 +8,24 @@ on:
 
 jobs:
   build:
+    if: vars.ENABLED != ''
     runs-on: ubuntu-latest
     container:
       image: gitea/runner-images:ubuntu-latest
       volumes:
-        - /mnt/workspace/docker-php:/workspace/docker-php
+        - /mnt/workflows/docker-php:/mnt/workflows/docker-php
     defaults:
       run:
-        working-directory: /workspace/docker-php
+        working-directory: /mnt/workflows/docker-php
     steps:
       - name: Build and Test PHP 5.4
         id: build
-        run: |
-          if [ ! -x ./build.sh ]; then
-            echo "❌ build.sh 不存在或不可执行"
-            exit 1
-          fi
-          ./build.sh 5.4 -t 2>&1 | tee build-5.4.log
-
-      - name: Check vulnerability results
-        id: check
-        run: |
-          total_line=$(grep 'Total:' build-5.4.log || true)
-          if [ -n "$total_line" ]; then
-            echo "trivy 结果: $total_line"
-            total_num=$(echo "$total_line" | awk '{print $2}')
-            if echo "$total_num" | grep -qE '^[1-9]([^0-9]|$)'; then
-              echo "❌ 检测到安全漏洞 (Total=$total_num)，构建失败"
-              exit 1
-            else
-              echo "✅ 安全漏洞数量为 0，通过"
-            fi
-          else
-            echo "✅ 未检测到安全漏洞，通过"
-          fi
+        run: ./build.sh 5.4 -t
 
       - name: Docker login
-        if: success()
+        if: success() && vars.ENABLED_PUSH != ''
         run: echo "${{ secrets.PASS }}" | docker login -u "${{ secrets.USER }}" --password-stdin
 
       - name: Push PHP 5.4
-        if: success()
+        if: success() && vars.ENABLED_PUSH != ''
         run: ./build.sh 5.4 -p

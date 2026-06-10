@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eo pipefail
 
 usage() {
   echo "Usage: ./build.sh <dirname> [-v|-ver image-tag] [-p|--push] [-t|--test] [-m|--mirrors] [buildx options]"
@@ -26,20 +26,20 @@ PUSH=
 params=("-f" "$work/Dockerfile")
 
 if [ -f "$work/tag" ]; then
-  tag_tmp=$(< "$work/tag")
+  tag_tmp=$(<"$work/tag")
   test -n "$tag_tmp" && IMAGE_TAG="$tag_tmp"
 fi
 
 shift
 while [ $# -gt 0 ]; do
   case $1 in
-  -m|--mirrors)
+  -m | --mirrors)
     params=("${params[@]}" --build-arg mirrors=mirrors.nju.edu.cn)
     ;;
-  -p|--push)
+  -p | --push)
     PUSH=yes
     ;;
-  -v|--ver)
+  -v | --ver)
     shift
     IMAGE_TAG="$1"
     if [[ -z "$IMAGE_TAG" || '-' == "${IMAGE_TAG:0:1}" ]]; then
@@ -47,10 +47,10 @@ while [ $# -gt 0 ]; do
       exit 1
     fi
     ;;
-  -t|--test)
+  -t | --test)
     TEST_WEB="yes"
     ;;
-  -c|--clear)
+  -c | --clear)
     CLEAR_BUILDX="yes"
     ;;
   *)
@@ -60,39 +60,46 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-user=$(docker info | grep 'Username' | awk '{print $2}')
+user=$(docker info | grep 'Username' | awk '{print $2}' || :)
 [ -z "$user" ] || user="$user/"
 
 if [ "$IMAGE_TAG" != "${IMAGE_TAG%%:*}" ]; then
   IMAGE_REPO="${IMAGE_TAG%%:*}"
-  IMAGE_TAG="${IMAGE_TAG//*:}"
+  IMAGE_TAG="${IMAGE_TAG//*:/}"
 fi
 
 default_image="${user}${IMAGE_REPO}:$IMAGE_TAG"
 images="-t $default_image"
 if [ -f "$work/.latest" ]; then
-    images="$images -t ${user}${IMAGE_REPO}:${IMAGE_TAG%%.*}"
+  images="$images -t ${user}${IMAGE_REPO}:${IMAGE_TAG%%.*}"
 fi
 
 instance_name=provenance-builder
-
-if docker buildx ls | grep -qs "$instance_name"; then
-  if [ -n "$CLEAR_BUILDX" ]; then
-    docker buildx prune -af || :
+(
+  if docker buildx ls | grep -qs "$instance_name"; then
+    if [ -n "$CLEAR_BUILDX" ]; then
+      docker buildx prune -af || :
+    fi
+    docker buildx use $instance_name
+  else
+    docker buildx create --name $instance_name --use
   fi
-  docker buildx use $instance_name
-else
-  docker buildx create --name $instance_name --use
-fi
 
-if [ -n "$PUSH" ]; then
-  docker buildx build . --provenance=mode=max --sbom=true --push $images "${params[@]}"
-fi
-docker buildx build . --load $images "${params[@]}"
+  if [ -n "$PUSH" ]; then
+    docker buildx build . --provenance=mode=max --sbom=true --push $images "${params[@]}"
+  fi
+  docker buildx build . --load $images "${params[@]}"
+) 2>&1 | tee build-$IMAGE_TAG.log
 
 if [ -n "$TEST_WEB" ]; then
-  docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /root/.cache/trivy:/root/.cache/trivy aquasec/trivy image $default_image
-  "$BIN_DIR/test.sh" $default_image
+  log="test-$IMAGE_TAG.log"
+  (docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /root/.cache/trivy:/root/.cache/trivy aquasec/trivy image $default_image 2>&1) | tee $log
+  grep -q 'Total:' $log && exit 1
+
+  "$BIN_DIR/test.sh" $default_image | tee -a $log
+  if [[ $IMAGE_TAG != cs ]]; then
+    grep -q 'https ok' $log || exit 1
+  fi
 fi
 
 echo -e "\033[36;1m>>> $(echo "$images" | sed 's/-t //g')\033[0m"
