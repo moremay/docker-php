@@ -1,6 +1,7 @@
 name: Build PHP 7.4
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:

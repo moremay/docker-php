@@ -1,0 +1,45 @@
+name: Build APK Packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "apk/**/APKBUILD"
+      - "apk/**/*.patch"
+      - "apk/bin/build.sh"
+
+jobs:
+  build:
+    if: ${{ vars.ENABLED == 'yes' }}
+    runs-on: ubuntu-latest
+    container:
+      image: gitea/runner-images:ubuntu-latest
+      volumes:
+        - /mnt/workflows/docker-php:/mnt/workflows/docker-php
+    defaults:
+      run:
+        working-directory: /mnt/workflows/docker-php
+    steps:
+      - name: Setup APK signing keys
+        env:
+          APK_KEY: ${{ secrets.APK_KEY }}
+          APK_PUB: ${{ secrets.APK_PUB }}
+        run: |
+          if [ -z "$APK_KEY" ] || [ -z "$APK_PUB" ]; then
+            echo "::error::APK signing keys not set. Please configure secrets.APK_KEY and secrets.APK_PUB"
+            exit 1
+          fi
+          mkdir -p apk/.abuild
+          echo 'PACKAGER="CI Builder <ci@builder.local>"' > apk/.abuild/abuild.conf
+          echo 'PACKAGER_PRIVKEY=/root/.abuild/abuild.key' >> apk/.abuild/abuild.conf
+          echo 'REPODEST=/' >> apk/.abuild/abuild.conf
+          echo "$APK_KEY" > apk/.abuild/abuild.key
+          echo "$APK_PUB" > apk/.abuild/abuild.key.pub
+          chmod 600 apk/.abuild/abuild.key
+          chmod 644 apk/.abuild/abuild.key.pub
+
+      - name: Build APK packages
+        run: |
+          docker run --rm -v /mnt/workflows/docker-php/apk:/root alpine /root/bin/build.sh
+          ls -l apk/x86_64/
