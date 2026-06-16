@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ash
 set -e
 
 usage() {
@@ -35,7 +35,7 @@ usage() {
     echo "        test     Run make test."
     echo "        [--keep-dev] [--keep-static] [--no-strip] see prune."
     echo ""
-    echo "    patch <url>..."
+    echo "    patch <url> <sha256> ..."
     echo "        下载并应用补丁(.patch 文件)。"
     echo "        Download and apply patches (.patch files)."
     echo ""
@@ -78,22 +78,22 @@ MAKE_LOG=/usr/src/make
 x_before() {
     mkdir -p /usr/src
     find /usr \( -type f -o -type l \) \( -name "*.a" -o -name "*.so" -o -name "*.so.*" \) |
-        sort -u | tee "$FILE_LIST-base" | awk -F/ '{print $NF}' | sort -u > "$FILE_LIST-exists"
+        sort -u | tee "$FILE_LIST-base" | awk -F/ '{print $NF}' | sort -u >"$FILE_LIST-exists"
 }
 
 x_dev() {
     # 查找范围不小于 x_after ?
     # -perm '/0111' 是为了从 $FILE_LIST-make 中排除已有的可执行文件
     find /usr \( -type f -o -type l \) \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) |
-        sort -u > "$FILE_LIST-apk"
-    comm -13 "$FILE_LIST-base" "$FILE_LIST-apk" | grep "\.so$\|\.so\." | awk -F/ '{print $NF}' | sort -u > "$FILE_LIST-dev"
+        sort -u >"$FILE_LIST-apk"
+    comm -13 "$FILE_LIST-base" "$FILE_LIST-apk" | grep "\.so$\|\.so\." | awk -F/ '{print $NF}' | sort -u >"$FILE_LIST-dev"
 }
 
 x_after() {
     local found
     # 文件用于 scanelf 和 strip 及下一步可能需要的静态库，排除符号链接。
     found=$(find "$TARGET" -type f \( -perm '/0111' -o -name "*.a" -o -name "*.so" -o -name "*.so.*" \) | sort -u)
-    comm -13 "$FILE_LIST-apk" <(echo "$found") > "$FILE_LIST-make"
+    comm -13 "$FILE_LIST-apk" <(echo "$found") >"$FILE_LIST-make"
     {
         echo "###"
         cat "$FILE_LIST-make"
@@ -104,7 +104,7 @@ apk_add() {
     # prev make no --keep-dev
     if [ ! -f "$FILE_LIST-base" ]; then
         x_before
-        apk add --allow-untrusted --no-cache --virtual .phpize-deps $PHPIZE_DEPS "$@"
+        apk add --allow-untrusted --cache-dir /apk-cache --virtual .phpize-deps $PHPIZE_DEPS "$@"
         x_dev
     fi
 }
@@ -153,7 +153,7 @@ prune() {
 
     touch "$FILE_LIST-a"
     if [ -n "${keep_a}" ] && [ -f "$FILE_LIST-make" ]; then
-        grep -h ".a$" "$FILE_LIST-a" "$FILE_LIST-make" | sort -u > "$FILE_LIST-a.tmp"
+        grep -h ".a$" "$FILE_LIST-a" "$FILE_LIST-make" | sort -u >"$FILE_LIST-a.tmp"
         mv -f "$FILE_LIST-a.tmp" "$FILE_LIST-a"
     fi
     comm -13 "$FILE_LIST-a" <(find "$TARGET" -type f -name "*.a" | sort -u) |
@@ -169,7 +169,7 @@ prune() {
             echo "### $(basename "$SRC_DIR") deps:"
             echo "$run_deps"
         } | tee -a "$MAKE_LOG-deps"
-        apk add --allow-untrusted --no-cache $run_deps
+        apk add --allow-untrusted --cache-dir /apk-cache $run_deps
     fi
 
     rm -f "$FILE_LIST-"*
@@ -183,15 +183,15 @@ need_deps() {
     local deps_all
     local deps_list
 
-    lib_names=$(find "$TARGET" -name "*.so*" \( -type f -o -type l \) 2>/dev/null | \
-            awk -F/ '{print $NF}')
+    lib_names=$(find "$TARGET" -name "*.so*" \( -type f -o -type l \) 2>/dev/null |
+        awk -F/ '{print $NF}')
     if [ -f "$FILE_LIST-dev" ] && [ -n "$lib_names" ]; then
         lib_names=$(echo "$lib_names" | grep -v -s -F -f "$FILE_LIST-dev" || :)
     fi
     lib_names=$({
         echo "$lib_names"
         test -f "$FILE_LIST-exists" && cat "$FILE_LIST-exists"
-        } | sort -u)
+    } | sort -u)
 
     deps_list=$(
         {
@@ -202,7 +202,8 @@ need_deps() {
                 scanelf --needed --nobanner --format '%n#p' --recursive "$TARGET"
             fi
         } |
-        tr ',' '\n' | sort -u)
+            tr ',' '\n' | sort -u
+    )
     deps_list=$(comm -13 <(echo "$lib_names") <(echo "$deps_list"))
 
     cd /usr/lib
@@ -212,8 +213,8 @@ need_deps() {
         deps_all=$(echo -e "$deps_all\n$deps_list" | sort -u)
 
         deps_list=$(echo "$deps_list" | tr '\n' '\0' |
-                    xargs -0r -n 8 scanelf --needed --nobanner --format '%n#p' |
-                    tr ',' '\n' | sort -u)
+            xargs -0r -n 8 scanelf --needed --nobanner --format '%n#p' |
+            tr ',' '\n' | sort -u)
         deps_list=$(comm -13 <(echo "$deps_all") <(echo "$deps_list") | sort -u)
         deps_list=$(comm -13 <(echo "$lib_names") <(echo "$deps_list"))
     done
@@ -260,16 +261,26 @@ download() {
         local LIB_EXT
         LIB_FILE="$(basename "${LIB_URL%%\?*}")"
         case "$LIB_FILE" in
-            *.tar.*) LIB_EXT=".tar.${LIB_FILE##*.}" ;;
-            *.*)     LIB_EXT=".${LIB_FILE##*.}" ;;
-            *)       LIB_EXT="" ;;
+        *.tar.*) LIB_EXT=".tar.${LIB_FILE##*.}" ;;
+        *.*) LIB_EXT=".${LIB_FILE##*.}" ;;
+        *) LIB_EXT="" ;;
         esac
         LIB_FILE="$LIB_PATH$LIB_EXT"
     fi
 
-    mkdir -p "$(dirname "$LIB_PATH")"
-    curl -sSLko "$LIB_FILE" "$LIB_URL"
-    echo "$LIB_SHA256 *$LIB_FILE" | sha256sum -c -
+    local DOWLOAD_FILE
+    DOWLOAD_FILE=$(echo "$LIB_URL" | sed 's#^https\?://##; s/[\/?&=:]/_/g')
+    DOWLOAD_FILE="/download/$DOWLOAD_FILE"
+
+    mkdir -p /download "$(dirname "$LIB_PATH")"
+
+    if [ -f "$DOWLOAD_FILE" ] && echo "$LIB_SHA256 $DOWLOAD_FILE" | sha256sum -c - >/dev/null 2>&1; then
+        cp "$DOWLOAD_FILE" "$LIB_FILE"
+    else
+        curl -sSLko "$LIB_FILE" "$LIB_URL"
+        echo "$LIB_SHA256 *$LIB_FILE" | sha256sum -c -
+        cp "$LIB_FILE" "$DOWLOAD_FILE"
+    fi
 
     if [ "$action" = "gz" ]; then
         gzip -d "$LIB_FILE"
@@ -284,94 +295,101 @@ download() {
 
 main() {
     case "$1" in
-        download)
-            shift
-            download "$@"
-            ;;
-        init)
-            if [ $# -lt 4 ]; then
-                usage
-                return 1
-            fi
+    download)
+        shift
+        download "$@"
+        ;;
+    init)
+        if [ $# -lt 4 ]; then
+            usage
+            return 1
+        fi
 
-            local LIB_PATH="$2"
-            local LIB_URL="$3"
-            local LIB_SHA256="$4"
-            local LIB_ACTION="tar"
-            local cmd_download="curl"
-            shift 4
+        local LIB_PATH="$2"
+        local LIB_URL="$3"
+        local LIB_SHA256="$4"
+        local LIB_ACTION="tar"
+        local cmd_download="curl"
+        shift 4
 
-            if [ "$LIB_SHA256" = "git" ]; then
-                LIB_ACTION="git"
-                cmd_download="git"
-            fi
+        if [ "$LIB_SHA256" = "git" ]; then
+            LIB_ACTION="git"
+            cmd_download="git"
+        fi
 
-            if command -v $cmd_download >/dev/null; then
-                apk_add "$@"
-            else
-                apk_add $cmd_download "$@"
-            fi
-
-            cd /usr/src
-            download "$LIB_PATH" "$LIB_URL" "$LIB_SHA256" "$LIB_ACTION"
-            ;;
-        php-init)
-            docker-php-source extract
-            cd /usr/src/php
-
-            shift
+        if command -v $cmd_download >/dev/null; then
             apk_add "$@"
-            ;;
-        patch256)
-            shift
-            download "$@"
-            patch -p1 < "$1"
-            ;;
-        patch)
-            shift
-            local i=1
-            local p
-            for p in "$@"; do
-                curl -sSLko "$i.patch" "$p"
-                patch -p1 < "$i.patch"
-                i=$((i + 1))
-            done
-            ;;
-        make)
-            local run_test=
-            local arg
-            shift
-            for arg in "$@"; do
-                case "$arg" in
-                test | --test)
-                    run_test=yes
-                    ;;
-                esac
-            done
+        else
+            apk_add $cmd_download "$@"
+        fi
 
-            make -j "$(nproc)"
-            make install
-            if [ -n "${run_test}" ]; then
-                make test
-            fi
-            make clean
+        cd /usr/src
+        download "$LIB_PATH" "$LIB_URL" "$LIB_SHA256" "$LIB_ACTION"
+        ;;
+    php-init)
+        docker-php-source extract
+        cd /usr/src/php
 
-            prune "$@"
-            ;;
-        deps)
-            need_deps
-            ;;
-        prune)
-            shift
-            prune "$@"
-            ;;
-        help)
-            usage
-            ;;
-        *)
-            usage
-            exit 1
-            ;;
+        shift
+        apk_add "$@"
+        ;;
+    patch256)
+        shift
+        download "$@"
+        patch -p1 <"$1"
+        ;;
+    patch)
+        shift
+        while [ $# -ge 2 ]; do
+            url="$1"
+            sha="$2"
+            shift 2
+
+            name=$(basename "$url")
+            case "$name" in
+            *.patch) ;;
+            *) name="$name.patch" ;;
+            esac
+
+            download "$name" "$url" "$sha" file
+            patch -p1 <"$name"
+        done
+        ;;
+    make)
+        local run_test=
+        local arg
+        shift
+        for arg in "$@"; do
+            case "$arg" in
+            test | --test)
+                run_test=yes
+                ;;
+            esac
+        done
+
+        make -j "$(nproc)"
+        make install
+        if [ -n "${run_test}" ]; then
+            make test
+        fi
+        make clean
+
+        prune "$@"
+        ;;
+    deps)
+        need_deps
+        ;;
+    prune)
+        shift
+        prune "$@"
+        ;;
+    help)
+        usage
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
     esac
 }
 

@@ -21,7 +21,8 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 ENV VER_WOLFSSL=5.9.1-r100
 ENV VER_CURL=8.20.0-r100
 
-RUN apk add --allow-untrusted --no-cache \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+    apk add --allow-untrusted --cache-dir /apk-cache \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
@@ -34,7 +35,9 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 ENV PHP_SSL=/usr/local/ssl1.1
 
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -eux; \
 	TARGET="${PHP_SSL}"; \
 	. docker-lib init 'openssl-1.1' \
 		"https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz" \
@@ -46,14 +49,18 @@ RUN set -eux; \
 
 # php5, 7: /usr/local
 # php8等待alpine更新
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -eux; \
 	. docker-lib init "libiconv" \
 		"http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.19.tar.gz" \
 		"88dd96a8c0464eca144fc791ae60cd31cd8ee78321e67397e25fc095c4a19aa6"; \
 	./configure --prefix=$TARGET; \
 	docker-lib make
 
-RUN set -ex; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -ex; \
 	docker-lib download /usr/src/php \
 		"https://www.php.net/distributions/php-7.4.33.tar.xz" \
 		"924846abf93bc613815c55dd3f5809377813ac62a9ec4eb3778675b82a27b927"
@@ -62,7 +69,8 @@ ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=7.4.33
 ENV PHP_INI_DIR=/usr/local/etc/php
 
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+    set -eux; \
 	. docker-lib php-init \
 		argon2-dev \
 		coreutils \
@@ -164,7 +172,9 @@ RUN set -eux; \
 	} > timezone.ini; \
 	echo "expose_php = Off" > disable-x-powered-by.ini
 
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=php-cache,target=/download \
+    set -eux; \
 	. docker-lib php-init \
 		bzip2-dev \
 		curl-dev=${VER_CURL} \
@@ -224,7 +234,9 @@ RUN set -eux; \
 	\
 	docker-lib prune
 
-RUN set -eux; \
+
+RUN --mount=type=cache,id=php-cache,target=/download \
+	set -eux; \
 	FILE_PATH="/usr/local/bin/composer";\
 	FILE_SHA256="$(curl -sSLk https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
 	curl -sSLko "$FILE_PATH" https://getcomposer.org/download/latest-stable/composer.phar; \

@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    if: vars.ENABLED != ''
+    if: ${{ vars.ENABLED == 'yes' }}
     runs-on: ubuntu-latest
     container:
       image: gitea/runner-images:ubuntu-latest
@@ -24,9 +24,9 @@ jobs:
         run: ./build.sh 5.6 -t
 
       - name: Docker login
-        if: success() && vars.ENABLED_PUSH != ''
+        if: success() && vars.ENABLED_PUSH == 'yes'
         run: echo "${{ secrets.PASS }}" | docker login -u "${{ secrets.USER }}" --password-stdin
 
       - name: Push PHP 5.6
-        if: success() && vars.ENABLED_PUSH != ''
+        if: success() && vars.ENABLED_PUSH == 'yes'
         run: ./build.sh 5.6 -p

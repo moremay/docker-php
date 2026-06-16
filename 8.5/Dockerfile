@@ -18,7 +18,8 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 	fi; \
 	echo '/usr/src/repo/' >> /etc/apk/repositories
 
-RUN apk add --allow-untrusted --no-cache \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+    apk add --allow-untrusted --cache-dir /apk-cache \
 	curl \
 	;
 
@@ -29,14 +30,18 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 # php5, 7: /usr/local
 # php8等待alpine更新
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -eux; \
 	. docker-lib init "libiconv" \
 		"http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.19.tar.gz" \
 		"88dd96a8c0464eca144fc791ae60cd31cd8ee78321e67397e25fc095c4a19aa6"; \
 	./configure --prefix=$TARGET; \
 	docker-lib make
 
-RUN set -ex; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=php-cache,target=/download \
+    set -ex; \
 	docker-lib download /usr/src/php \
 		"https://www.php.net/distributions/php-8.5.7.tar.xz" \
 		"01ba2ed1c2658dacf91bebc8be6a4885f69b811c7993831fc48e26107ab29985"
@@ -45,7 +50,8 @@ ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=8.5.7
 ENV PHP_INI_DIR=/usr/local/etc/php
 
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+    set -eux; \
 	. docker-lib php-init \
 		argon2-dev \
 		coreutils \
@@ -146,7 +152,9 @@ RUN set -eux; \
 	} > timezone.ini; \
 	echo "expose_php = Off" > disable-x-powered-by.ini
 
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=php-cache,target=/download \
+    set -eux; \
 	. docker-lib php-init \
 		bzip2-dev \
 		curl-dev \
@@ -208,7 +216,9 @@ RUN set -eux; \
 	\
 	docker-lib prune
 
-RUN set -eux; \
+
+RUN --mount=type=cache,id=php-cache,target=/download \
+	set -eux; \
 	FILE_PATH="/usr/local/bin/composer";\
 	FILE_SHA256="$(curl -sSLk https://getcomposer.org/download/latest-stable/composer.phar.sha256)"; \
 	curl -sSLko "$FILE_PATH" https://getcomposer.org/download/latest-stable/composer.phar; \

@@ -21,7 +21,8 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 ENV VER_WOLFSSL=5.9.1-r100
 ENV VER_CURL=8.20.0-r100
 
-RUN apk add --allow-untrusted --no-cache \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+    apk add --allow-untrusted --cache-dir /apk-cache \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
@@ -34,7 +35,9 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 ENV PHP_SSL=/usr/local/ssl1.0
 
-RUN set -ex; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -ex; \
 	TARGET="${PHP_SSL}"; \
 	. docker-lib init 'openssl-1.0' \
 		"https://github.com/openssl/openssl/releases/download/OpenSSL_1_0_2u/openssl-1.0.2u.tar.gz" \
@@ -46,21 +49,27 @@ RUN set -ex; \
 
 # php5, 7: /usr/local
 # php8等待alpine更新
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -eux; \
 	. docker-lib init "libiconv" \
 		"http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.19.tar.gz" \
 		"88dd96a8c0464eca144fc791ae60cd31cd8ee78321e67397e25fc095c4a19aa6"; \
 	./configure --prefix=$TARGET; \
 	docker-lib make
 
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -eux; \
 	. docker-lib init "zlib-1.2" \
 		"https://github.com/madler/zlib/releases/download/v1.2.13/zlib-1.2.13.tar.gz" \
 		"b3a24de97a8fdbc835b9833169501030b8977031bcb54b3b3ac13740f846ab30"; \
 	./configure --prefix=${TARGET}; \
 	docker-lib make
 
-RUN set -ex; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -ex; \
 	. docker-lib init "libxml2-2.12" \
 		"https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.10.tar.xz" \
 		"c3d8c0c34aa39098f66576fe51969db12a5100b956233dc56506f7a8679be995"; \
@@ -73,14 +82,18 @@ RUN set -ex; \
 	docker-lib make
 
 # alpine: freetype-config not found.
-RUN set -ex; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -ex; \
 	. docker-lib init "freetype" \
 		"https://download.savannah.gnu.org/releases/freetype/freetype-2.14.1.tar.xz" \
 		"32427e8c471ac095853212a37aef816c60b42052d4d9e48230bab3bdf2936ccc"; \
 	./configure --prefix=$TARGET --enable-freetype-config; \
 	docker-lib make
 
-RUN set -ex; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -ex; \
 	docker-lib download /usr/src/php \
 		"https://www.php.net/distributions/php-5.6.40.tar.xz" \
 		"1369a51eee3995d7fbd1c5342e5cc917760e276d561595b6052b21ace2656d1c"
@@ -89,7 +102,8 @@ ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=5.6.40
 ENV PHP_INI_DIR=/usr/local/etc/php
 
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+    set -eux; \
 	. docker-lib php-init \
 		curl-dev=${VER_CURL} \
 		readline-dev \
@@ -177,7 +191,9 @@ RUN set -eux; \
 	} > timezone.ini; \
 	echo "expose_php = Off" > disable-x-powered-by.ini
 
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+	--mount=type=cache,id=download,target=/download \
+    set -eux; \
 	. docker-lib php-init \
 		bzip2-dev \
 		gettext-dev \
@@ -224,7 +240,8 @@ RUN set -eux; \
 	\
 	docker-lib prune
 
-RUN set -eux; \
+RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+    set -eux; \
 	. docker-lib php-init; \
 	\
 	mkdir -p ${PHP_SSL}/ssl; \
@@ -244,10 +261,13 @@ RUN set -eux; \
 	rm -rf ~/.pearrc; \
 	docker-lib prune
 
-RUN set -eux; \
+
+RUN --mount=type=cache,id=download,target=/download \
+	set -eux; \
 	FILE_PATH="/usr/local/bin/composer";\
 	FILE_SHA256='8b3f41253363f0645402d1951d6e7f02adedeef29c16de6074763e463e25c23f'; \
-	curl -sSLko "$FILE_PATH" https://getcomposer.org/download/2.2.25/composer.phar; \
+	docker-lib download "$FILE_PATH" 'https://getcomposer.org/download/2.2.25/composer.phar' \
+		"$FILE_SHA256" file; \
 	echo "$FILE_SHA256 *$FILE_PATH" | sha256sum -c -; \
 	chmod +x "$FILE_PATH"; \
 	\
