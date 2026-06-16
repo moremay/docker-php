@@ -9,6 +9,7 @@ ARG TZ
 
 COPY script/docker-* /usr/local/bin/
 COPY apk/x86_64 /usr/src/repo/x86_64
+COPY apk/.abuild/*.pub /etc/apk/keys/
 
 RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories; \
 	echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories; \
