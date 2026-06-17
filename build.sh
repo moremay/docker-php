@@ -60,18 +60,27 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-user=$(docker info | grep 'Username' | awk '{print $2}' || :)
-[ -z "$user" ] || user="$user/"
-
-if [ "$IMAGE_TAG" != "${IMAGE_TAG%%:*}" ]; then
-  IMAGE_REPO="${IMAGE_TAG%%:*}"
-  IMAGE_TAG="${IMAGE_TAG//*:/}"
+if [ "$IMAGE_TAG" != "${IMAGE_TAG%:*}" ]; then
+  IMAGE_REPO="${IMAGE_TAG%:*}"
+  IMAGE_TAG="${IMAGE_TAG##*:}"
 fi
 
-default_image="${user}${IMAGE_REPO}:$IMAGE_TAG"
+if [ "$IMAGE_REPO" != "${IMAGE_REPO##*/}" ]; then
+  # 支持没有 user: `/repo:tag`
+  user="${IMAGE_REPO%/*}"
+  IMAGE_REPO="${IMAGE_REPO##*/}"
+else
+  user=$(docker info | grep 'Username' | awk '{print $2}' || :)
+fi
+
+[ -z "$user" ] || user="$user/"
+IMAGE_REPO="${user}${IMAGE_REPO}"
+
+default_image="${IMAGE_REPO}:$IMAGE_TAG"
 images="-t $default_image"
 if [ -f "$work/.latest" ]; then
-  images="$images -t ${user}${IMAGE_REPO}:${IMAGE_TAG%%.*}"
+  # php:7.4 => php:7
+  images="$images -t ${IMAGE_REPO}:${IMAGE_TAG%%.*}"
 fi
 
 instance_name=provenance-builder
