@@ -16,13 +16,14 @@ apk update
 "
 
 get_ver() {
-  docker exec tmp-alpine sh -c "apk query --all-matches '$1' | grep Version"
+  docker exec tmp-alpine sh -c "apk query --all-matches '$1' --fields version,repositories"
 }
 
 echo "=========================="
 
 for pkg in "$@"; do
   echo "$pkg"
+  echo ""
   get_ver "$pkg"
   echo "=========================="
 done
