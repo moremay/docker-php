@@ -20,7 +20,7 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 #{{if ver < 8 }}
 
 ENV VER_WOLFSSL=5.9.1-r100
-ENV VER_CURL=8.20.0-r100
+ENV VER_CURL=8.21.0-r100
 #{{fi}}
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \

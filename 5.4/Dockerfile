@@ -19,7 +19,7 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 	echo '/usr/src/repo/' >> /etc/apk/repositories
 
 ENV VER_WOLFSSL=5.9.1-r100
-ENV VER_CURL=8.20.0-r100
+ENV VER_CURL=8.21.0-r100
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
