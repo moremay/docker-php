@@ -43,11 +43,11 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 	--mount=type=cache,id=php-cache,target=/download \
     set -ex; \
 	docker-lib download /usr/src/php \
-		"https://www.php.net/distributions/php-8.5.7.tar.xz" \
-		"01ba2ed1c2658dacf91bebc8be6a4885f69b811c7993831fc48e26107ab29985"
+		"https://www.php.net/distributions/php-8.5.8.tar.xz" \
+		"58910198d19e873048fe87cdfe16bc790025417ede3d1651bfa1c4b533d573f2"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.7
+ENV PHP_VERSION=8.5.8
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
@@ -238,7 +238,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.7
+ENV PHP_VERSION=8.5.8
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"
