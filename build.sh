@@ -83,15 +83,15 @@ if [ -f "$work/.latest" ]; then
   images="$images -t ${IMAGE_REPO}:${IMAGE_TAG%%.*}"
 fi
 
-instance_name=provenance-builder
+export BUILDX_BUILDER=provenance-builder
 (
-  if docker buildx ls | grep -qs "$instance_name"; then
+  if docker buildx ls | grep -qs "$BUILDX_BUILDER"; then
+    docker buildx use $BUILDX_BUILDER
     if [ -n "$CLEAR_BUILDX" ]; then
       docker buildx prune -af || :
     fi
-    docker buildx use $instance_name
   else
-    docker buildx create --name $instance_name --use
+    docker buildx create --name $BUILDX_BUILDER --use
   fi
 
   if [ -n "$PUSH" ]; then
