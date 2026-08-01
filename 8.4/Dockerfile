@@ -20,6 +20,7 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
+	nghttp2=~1.70.0-r0 \
 	curl \
 	;
 
