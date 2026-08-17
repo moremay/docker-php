@@ -11,8 +11,7 @@
         }
     },
     "require-dev": {
-        "dealerdirect/phpcodesniffer-composer-installer": "*",
-        "phpcompatibility/phpcompatibility-all": "*",
+        "phpcompatibility/php-compatibility": "^10.0.0@dev",
         "moremay/phpcompatibility-pecl-mcrypt": "*"
     }
 }

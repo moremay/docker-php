@@ -1,115 +1,127 @@
 <?xml version="1.0"?>
 <ruleset name="PHPCompatibilityPeclMcrypt">
-    <rule ref="PHPCompatibility.Constants.RemovedConstants.mcrypt_dev_urandomDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.Extensions.RemovedExtensions.mcryptDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_ecbDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_cbcDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_cfbDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_ofbDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_create_ivDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_decryptDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_algorithms_nameDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_block_sizeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_iv_sizeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_key_sizeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_modes_nameDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_supported_key_sizesDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_is_block_algorithm_modeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_is_block_algorithmDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_is_block_modeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_self_testDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_encryptDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_generic_deinitDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_generic_initDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_genericDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_block_sizeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_cipher_nameDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_iv_sizeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_key_sizeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_list_algorithmsDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_list_modesDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_closeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_get_algo_block_sizeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_get_algo_key_sizeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_get_supported_key_sizesDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_is_block_algorithm_modeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_is_block_algorithmDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_is_block_modeDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_openDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
-    </rule>
-    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_self_testDeprecatedRemoved">
-        <exclude-pattern>*</exclude-pattern>
+    <description>PHP_CodeSniffer ruleset for projects using the pecl/mcrypt extension.
+Includes the full PHPCompatibility standard, with all mcrypt-related
+deprecation/removal notices (functions, MCRYPT_* constants, mcrypt.* ini
+directives and the extension itself) disabled, as these remain available
+when pecl/mcrypt is installed.</description>
+
+    <!-- The full PHPCompatibility standard. -->
+    <rule ref="PHPCompatibility"/>
+
+    <!-- ============================================================
+         Exclusions for pecl/mcrypt
+         When pecl/mcrypt is installed, the mcrypt functions, MCRYPT_*
+         constants and mcrypt.* ini directives remain available even on
+         modern PHP versions, so the PHPCompatibility deprecation/removal
+         notices for these would be false positives. The following blocks
+         disable exactly those notices (grouped per sniff).
+         ============================================================ -->
+
+    <!-- The mcrypt extension itself. -->
+    <rule ref="PHPCompatibility.Extensions.RemovedExtensions">
+        <exclude name="PHPCompatibility.Extensions.RemovedExtensions.mcryptDeprecatedRemoved"/>
     </rule>
 
+    <!-- All mcrypt_* functions (RemovedFunctions). -->
+    <rule ref="PHPCompatibility.FunctionUse.RemovedFunctions">
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_cbcDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_cfbDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_create_ivDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_decryptDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_ecbDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_algorithms_nameDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_block_sizeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_iv_sizeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_key_sizeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_modes_nameDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_get_supported_key_sizesDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_is_block_algorithmDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_is_block_algorithm_modeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_is_block_modeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_enc_self_testDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_encryptDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_genericDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_generic_deinitDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_generic_endDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_generic_initDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_block_sizeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_cipher_nameDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_iv_sizeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_get_key_sizeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_list_algorithmsDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_list_modesDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_closeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_get_algo_block_sizeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_get_algo_key_sizeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_get_supported_key_sizesDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_is_block_algorithmDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_is_block_algorithm_modeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_is_block_modeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_openDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_module_self_testDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.FunctionUse.RemovedFunctions.mcrypt_ofbDeprecatedRemoved"/>
+    </rule>
+
+    <!-- All MCRYPT_* constants (RemovedConstants). -->
+    <rule ref="PHPCompatibility.Constants.RemovedConstants">
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_3desDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_arcfourDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_arcfour_ivDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_blowfishDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_cast_128DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_cast_256DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_cryptDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_decryptDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_desDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_des_compatDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_dev_randomDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_dev_urandomDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_encryptDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_enigmaDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_gostDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_ideaDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_loki97DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_marsDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_mode_cbcDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_mode_cfbDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_mode_ecbDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_mode_nofbDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_mode_ofbDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_mode_streamDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_panamaDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_randDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_rc2DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_rc4DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_rc6DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_rc6_128DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_rc6_192DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_rc6_256DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_rijndael_128DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_rijndael_192DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_rijndael_256DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_safer128DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_safer64DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_saferplusDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_serpentDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_serpent_128DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_serpent_192DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_serpent_256DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_skipjackDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_teanDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_threewayDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_tripledesDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_twofishDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_twofish128DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_twofish192DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_twofish256DeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_wakeDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.Constants.RemovedConstants.mcrypt_xteaDeprecatedRemoved"/>
+    </rule>
+
+    <!-- mcrypt.* ini directives (RemovedIniDirectives). -->
+    <rule ref="PHPCompatibility.IniDirectives.RemovedIniDirectives">
+        <exclude name="PHPCompatibility.IniDirectives.RemovedIniDirectives.mcrypt_algorithms_dirDeprecatedRemoved"/>
+        <exclude name="PHPCompatibility.IniDirectives.RemovedIniDirectives.mcrypt_modes_dirDeprecatedRemoved"/>
+    </rule>
 </ruleset>

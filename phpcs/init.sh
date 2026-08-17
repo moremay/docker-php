@@ -8,10 +8,10 @@ else
     cd /phpcs
 
     if [ -f composer.json ]; then
-        composer update
+        composer update phpcompatibility/php-compatibility --with-dependencies
     else
         echo "{}" >composer.json
         composer config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-        composer require --dev dealerdirect/phpcodesniffer-composer-installer:"*" phpcompatibility/phpcompatibility-all:"*"
+        composer require --dev phpcompatibility/php-compatibility:"^10.0.0@dev"
     fi
 fi

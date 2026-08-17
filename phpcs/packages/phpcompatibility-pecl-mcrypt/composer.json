@@ -4,7 +4,7 @@
   "description" : "A ruleset for PHP_CodeSniffer to check for PHP cross-version compatibility issues in projects, while accounting for pecl/mcrypt.",
   "type" : "phpcodesniffer-standard",
   "keywords" : [ "compatibility", "phpcs", "standards", "static analysis", "mcrypt" ],
-  "homepage" : "http://dev.lan/",
+  "homepage" : "http://jx.lan/",
   "license" : "LGPL-3.0-or-later",
   "authors" : [ {
     "name" : "moremay",
@@ -17,7 +17,7 @@
     "lock": false
   },
   "require" : {
-    "phpcompatibility/php-compatibility" : "^9.0"
+    "phpcompatibility/php-compatibility" : "^10.0"
   },
   "require-dev" : {
     "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
