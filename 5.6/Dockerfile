@@ -203,7 +203,7 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
 		libpng-dev \
-		libvpx-dev~1.16.0-r0 \
+		libvpx-dev~1.17.0-r0 \
 		libxml2-dev \
 		libxpm-dev \
 		libxslt-dev \
