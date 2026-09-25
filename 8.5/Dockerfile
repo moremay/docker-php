@@ -2,7 +2,7 @@
 ARG mirrors=
 ARG TZ=
 
-FROM alpine:3.24 AS builder
+FROM alpine:3.24.2 AS builder
 
 ARG mirrors
 ARG TZ
@@ -44,11 +44,11 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 	--mount=type=cache,id=php-cache,target=/download \
     set -ex; \
 	docker-lib download /usr/src/php \
-		"https://www.php.net/distributions/php-8.5.10.tar.xz" \
-		"6a8bebaa4d5a979a38db29a9373e9851f60c6b11f72172c585947e78f3081957"
+		"https://www.php.net/distributions/php-8.5.11.tar.xz" \
+		"d9be75c08e8c316f4c8f4194d8fbe1750a15f6a6d9d4e3fe72082abeeb800360"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.10
+ENV PHP_VERSION=8.5.11
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
@@ -239,7 +239,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.10
+ENV PHP_VERSION=8.5.11
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"

@@ -2,7 +2,7 @@
 ARG mirrors=
 ARG TZ=
 
-FROM alpine:3.24 AS builder
+FROM alpine:3.24.2 AS builder
 
 ARG mirrors
 ARG TZ
