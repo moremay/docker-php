@@ -2,7 +2,7 @@
 ARG mirrors=
 ARG TZ=
 
-FROM alpine:3.24.2 AS builder
+FROM alpine:3.24 AS builder
 
 ARG mirrors
 ARG TZ
@@ -23,7 +23,7 @@ ENV VER_CURL=8.22.0-r100
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
-	nghttp2=~1.70.0-r0 \
+	zlib=~1.3.2-r1 \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \

@@ -2,7 +2,7 @@
 ARG mirrors=
 ARG TZ=
 
-FROM alpine:3.24.2 AS builder
+FROM alpine:3.24 AS builder
 
 ARG mirrors
 ARG TZ
@@ -20,7 +20,7 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
-	nghttp2=~1.70.0-r0 \
+	zlib=~1.3.2-r1 \
 	curl \
 	;
 
