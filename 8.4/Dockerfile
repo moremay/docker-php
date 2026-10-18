@@ -21,7 +21,9 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
 	zlib=~1.3.2-r1 \
-	curl \
+	libx11=~1.8.14-r0 \
+	libxpm=~3.5.20-r0 \
+	curl=~8.23.0-r0 \
 	;
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"

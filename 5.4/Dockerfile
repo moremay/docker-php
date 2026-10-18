@@ -18,12 +18,14 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 	fi; \
 	echo '/usr/src/repo/' >> /etc/apk/repositories
 
-ENV VER_WOLFSSL=5.9.2-r100
-ENV VER_CURL=8.22.0-r100
+ENV VER_WOLFSSL=5.9.4-r100
+ENV VER_CURL=8.23.0-r100
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
 	zlib=~1.3.2-r1 \
+	libx11=~1.8.14-r0 \
+	libxpm=~3.5.20-r0 \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
