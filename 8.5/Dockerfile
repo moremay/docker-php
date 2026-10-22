@@ -46,12 +46,15 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 	--mount=type=cache,id=php-cache,target=/download \
     set -ex; \
 	docker-lib download /usr/src/php \
-		"https://www.php.net/distributions/php-8.5.11.tar.xz" \
-		"d9be75c08e8c316f4c8f4194d8fbe1750a15f6a6d9d4e3fe72082abeeb800360"
+		"https://www.php.net/distributions/php-8.5.12.tar.xz" \
+		"08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209"
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.11
+ENV PHP_VERSION=8.5.12
 ENV PHP_INI_DIR=/usr/local/etc/php
+
+# Patch files must be copied after the dependency builds above: docker-lib's
+# prune step runs `docker-php-source delete` and would wipe /usr/src/php.
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     set -eux; \
@@ -68,6 +71,15 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 		zlib-dev \
 	; \
 	rm -vf /usr/include/iconv.h; \
+	\
+	for i in /usr/src/php/*.patch; do \
+		test -f "$i" && patch -p1 < "$i"; \
+	done; \
+	if [ -d /usr/src/php/backports ]; then \
+		for i in /usr/src/php/backports/*.patch; do \
+			patch -p1 < "$i"; \
+		done; \
+	fi; \
 	\
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
 	cp -v php.ini-* "$PHP_INI_DIR/"; \
@@ -241,7 +253,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 ARG TZ
 
 ENV TZ=${TZ:-Asia/Shanghai}
-ENV PHP_VERSION=8.5.11
+ENV PHP_VERSION=8.5.12
 ENV PHP_INI_DIR=/usr/local/etc/php
 
 ENV PHPIZE_DEPS="autoconf file g++ gcc libc-dev make pkgconf re2c patch dpkg-dev dpkg"

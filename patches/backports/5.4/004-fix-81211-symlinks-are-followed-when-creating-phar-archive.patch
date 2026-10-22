@@ -1,0 +1,21 @@
+diff --git a/ext/phar/phar_object.c b/ext/phar/phar_object.c
+index b652181..0b375d8 100644
+--- a/ext/phar/phar_object.c
++++ b/ext/phar/phar_object.c
+@@ -1449,6 +1449,7 @@ static int phar_build(zend_object_iterator *iter, void *puser TSRMLS_DC) /* {{{
+ 	zend_class_entry *ce = p_obj->c;
+ 	phar_archive_object *phar_obj = p_obj->p;
+ 	char *str = "[stream]";
++	char ch;
+ 
+ 	iter->funcs->get_current_data(iter, &value TSRMLS_CC);
+ 
+@@ -1612,7 +1613,7 @@ phar_spl_fileinfo:
+ 		base = temp;
+ 		base_len = strlen(base);
+ 
+-		if (strstr(fname, base)) {
++		if (fname_len >= base_len && strncmp(fname, base, base_len) == 0 && ((ch = fname[base_len - IS_SLASH(base[base_len - 1])]) == '\0' || IS_SLASH(ch))) {
+ 			str_key_len = fname_len - base_len;
+ 
+ 			if (str_key_len <= 0) {

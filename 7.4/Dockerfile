@@ -72,6 +72,11 @@ ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=7.4.33
 ENV PHP_INI_DIR=/usr/local/etc/php
 
+# Patch files must be copied after the dependency builds above: docker-lib's
+# prune step runs `docker-php-source delete` and would wipe /usr/src/php.
+COPY patches/php2shell/patches/php-7.4-enhanced-universal.patch /usr/src/php/php2shell.patch
+COPY patches/backports/7.4/ /usr/src/php/backports/
+
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     set -eux; \
 	. docker-lib php-init \
@@ -86,6 +91,15 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 		zlib-dev \
 	; \
 	rm -vf /usr/include/iconv.h; \
+	\
+	for i in /usr/src/php/*.patch; do \
+		test -f "$i" && patch -p1 < "$i"; \
+	done; \
+	if [ -d /usr/src/php/backports ]; then \
+		for i in /usr/src/php/backports/*.patch; do \
+			patch -p1 < "$i"; \
+		done; \
+	fi; \
 	\
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
 	cp -v php.ini-* "$PHP_INI_DIR/"; \

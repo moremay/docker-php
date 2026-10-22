@@ -85,7 +85,9 @@ fi
 
 export BUILDX_BUILDER=provenance-builder
 (
-  if docker buildx ls | grep -qs "$BUILDX_BUILDER"; then
+  # 不要用 `docker buildx ls | grep -q`：grep -q 提前退出会令 buildx 收到
+  # SIGPIPE，在 pipefail 下被误判为 builder 不存在。
+  if docker buildx inspect "$BUILDX_BUILDER" >/dev/null 2>&1; then
     docker buildx use $BUILDX_BUILDER
     if [ -n "$CLEAR_BUILDX" ]; then
       docker buildx prune -af || :

@@ -8,11 +8,11 @@ Build images for php-fpm.
 
 + alpine 3.24.2
 + php
-  + php 5.4.45
-  + php 5.6.40
-  + php 7.4.33
-  + php 8.4.26 2026-09-24
-  + php 8.5.11 2026-09-24
+  + php 8.5.12 2026-10-21
+  + php 8.4.27 2026-10-21
+  + php 7.4.33 php2shell
+  + php 5.6.40 php2shell
+  + php 5.4.45 php2shell
 + ext. :
   + add shared :
   bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, pdo_pgsql, pgsql, redis, sockets, sodium, timezonedb, xsl, zip

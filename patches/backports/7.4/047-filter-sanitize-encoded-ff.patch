@@ -1,0 +1,13 @@
+diff --git a/ext/filter/sanitizing_filters.c b/ext/filter/sanitizing_filters.c
+index c17dc024..47f7a627 100644
+--- a/ext/filter/sanitizing_filters.c
++++ b/ext/filter/sanitizing_filters.c
+@@ -69,7 +69,7 @@ static void php_filter_encode_url(zval *value, const unsigned char* chars, const
+ 	unsigned char *e = s + char_len;
+ 	zend_string *str;
+ 
+-	memset(tmp, 1, sizeof(tmp)-1);
++	memset(tmp, 1, sizeof(tmp));
+ 
+ 	while (s < e) {
+ 		tmp[*s++] = '\0';

@@ -1,0 +1,3 @@
+[submodule "patches/php2shell"]
+	path = patches/php2shell
+	url = https://github.com/Anton-Barinov/php2shell-patches.git

@@ -1,0 +1,89 @@
+diff --git a/ext/filter/logical_filters.c b/ext/filter/logical_filters.c
+index 39a035f3af..9e1daffaab 100644
+--- a/ext/filter/logical_filters.c
++++ b/ext/filter/logical_filters.c
+@@ -445,6 +445,24 @@ void php_filter_validate_regexp(PHP_INPUT_FILTER_PARAM_DECL) /* {{{ */
+ }
+ /* }}} */
+ 
++static int is_userinfo_valid(char *str)
++{
++	const char *valid = "-._~!$&'()*+,;=:";
++	const char *p = str;
++	size_t len = strlen(str);
++
++	while (p - str < len) {
++		if (isalpha(*p) || isdigit(*p) || strchr(valid, *p)) {
++			p++;
++		} else if (*p == '%' && p - str <= len - 3 && isdigit(*(p+1)) && isxdigit(*(p+2))) {
++			p += 3;
++		} else {
++			return 0;
++		}
++	}
++	return 1;
++}
++
+ void php_filter_validate_url(PHP_INPUT_FILTER_PARAM_DECL) /* {{{ */
+ {
+ 	php_url *url;
+@@ -496,6 +514,13 @@ bad_url:
+ 		php_url_free(url);
+ 		RETURN_VALIDATION_FAILED
+ 	}
++
++	if (url->user != NULL && !is_userinfo_valid(url->user)) {
++		php_url_free(url);
++		RETURN_VALIDATION_FAILED
++
++	}
++
+ 	php_url_free(url);
+ }
+ /* }}} */
+diff --git a/ext/standard/url.c b/ext/standard/url.c
+index 8da9da3d6a..0278bd47e8 100644
+--- a/ext/standard/url.c
++++ b/ext/standard/url.c
+@@ -92,22 +92,6 @@ PHPAPI php_url *php_url_parse(char const *str)
+ 	return php_url_parse_ex(str, strlen(str));
+ }
+ 
+-static int is_userinfo_valid(const char *str, size_t len)
+-{
+-	char *valid = "-._~!$&'()*+,;=:";
+-	char *p = str;
+-	while (p - str < len) {
+-		if (isalpha(*p) || isdigit(*p) || strchr(valid, *p)) {
+-			p++;
+-		} else if (*p == '%' && p - str <= len - 3 && isdigit(*(p+1)) && isxdigit(*(p+2))) {
+-			p += 3;
+-		} else {
+-			return 0;
+-		}
+-	}
+-	return 1;
+-}
+-
+ /* {{{ php_url_parse
+  */
+ PHPAPI php_url *php_url_parse_ex(char const *str, int length)
+@@ -246,18 +230,13 @@ PHPAPI php_url *php_url_parse_ex(char const *str, int length)
+ 			ret->pass = estrndup(pp, (p-pp));
+ 			php_replace_controlchars_ex(ret->pass, (p-pp));
+ 		} else {
+-			if (!is_userinfo_valid(s, p-s)) {
+-				goto check_port;
+-			}
+ 			ret->user = estrndup(s, (p-s));
+ 			php_replace_controlchars_ex(ret->user, (p-s));
+-
+ 		}
+ 
+ 		s = p + 1;
+ 	}
+ 
+-check_port:
+ 	/* check for port */
+ 	if (s < ue && *s == '[' && *(e-1) == ']') {
+ 		/* Short circuit portscan,

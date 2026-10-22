@@ -1,0 +1,22 @@
+diff --git a/ext/pgsql/pgsql.c b/ext/pgsql/pgsql.c
+index 524b185..7c32e64 100644
+--- a/ext/pgsql/pgsql.c
++++ b/ext/pgsql/pgsql.c
+@@ -2079,7 +2079,7 @@ PHP_FUNCTION(pg_execute)
+ 				if (Z_TYPE(tmp_val) != IS_STRING) {
+ 					php_error_docref(NULL TSRMLS_CC, E_WARNING,"Error converting parameter");
+ 					zval_dtor(&tmp_val);
+-					_php_pgsql_free_params(params, num_params);
++					_php_pgsql_free_params(params, i);
+ 					RETURN_FALSE;
+ 				}
+ 				params[i] = estrndup(Z_STRVAL(tmp_val), Z_STRLEN(tmp_val));
+@@ -4906,7 +4906,7 @@ PHP_FUNCTION(pg_send_execute)
+ 				if (Z_TYPE(tmp_val) != IS_STRING) {
+ 					php_error_docref(NULL TSRMLS_CC, E_WARNING,"Error converting parameter");
+ 					zval_dtor(&tmp_val);
+-					_php_pgsql_free_params(params, num_params);
++					_php_pgsql_free_params(params, i);
+ 					RETURN_FALSE;
+ 				}
+ 				params[i] = estrndup(Z_STRVAL(tmp_val), Z_STRLEN(tmp_val));

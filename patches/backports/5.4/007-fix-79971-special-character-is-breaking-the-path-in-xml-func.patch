@@ -1,0 +1,44 @@
+diff --git a/ext/dom/domimplementation.c b/ext/dom/domimplementation.c
+index 8cdd0fe..3893c4a 100644
+--- a/ext/dom/domimplementation.c
++++ b/ext/dom/domimplementation.c
+@@ -111,6 +111,11 @@ PHP_METHOD(domimplementation, createDocumentType)
+ 	if (systemid_len > 0)
+ 		pch2 = systemid;
+ 
++	if (strstr(name, "%00")) {
++		php_error_docref(NULL TSRMLS_CC, E_WARNING, "URI must not contain percent-encoded NUL bytes");
++		RETURN_FALSE;
++	}
++
+ 	uri = xmlParseURI(name);
+ 	if (uri != NULL && uri->opaque != NULL) {
+ 		localname = xmlStrdup(uri->opaque);
+diff --git a/ext/libxml/libxml.c b/ext/libxml/libxml.c
+index 9bd8bfd..1d7f2df 100644
+--- a/ext/libxml/libxml.c
++++ b/ext/libxml/libxml.c
+@@ -299,6 +299,11 @@ static void *php_libxml_streams_IO_open_wrapper(const char *filename, const char
+ 
+ 	TSRMLS_FETCH();
+ 
++	if (strstr(filename, "%00")) {
++		php_error_docref(NULL TSRMLS_CC, E_WARNING, "URI must not contain percent-encoded NUL bytes");
++		return NULL;
++	}
++
+ 	uri = xmlParseURI(filename);
+ 	if (uri && (uri->scheme == NULL ||
+ 			(xmlStrncmp(BAD_CAST uri->scheme, BAD_CAST "file", 4) == 0))) {
+@@ -414,6 +419,11 @@ php_libxml_output_buffer_create_filename(const char *URI,
+ 	if (URI == NULL)
+ 		return(NULL);
+ 
++	if (strstr(URI, "%00")) {
++		php_error_docref(NULL TSRMLS_CC, E_WARNING, "URI must not contain percent-encoded NUL bytes");
++		return NULL;
++	}
++
+ 	puri = xmlParseURI(URI);
+ 	if (puri != NULL) {
+ 		if (puri->scheme != NULL)

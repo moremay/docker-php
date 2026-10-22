@@ -1,0 +1,15 @@
+diff --git a/ext/session/session.c b/ext/session/session.c
+index 94123f7..b01e0ae 100644
+--- a/ext/session/session.c
++++ b/ext/session/session.c
+@@ -2684,7 +2684,9 @@ static int php_session_rfc1867_callback(unsigned int event, void *event_data, vo
+ 		case MULTIPART_EVENT_END: {
+ 			multipart_event_end *data = (multipart_event_end *) event_data;
+ 
+-			if (Z_TYPE(progress->sid) && progress->key.c) {
++			/* php2shell: max_multipart_body_parts may abort the request before
++			 * the first file part initializes progress->data. */
++			if (Z_TYPE(progress->sid) && progress->key.c && progress->data) {
+ 				if (PS(rfc1867_cleanup)) {
+ 					php_session_rfc1867_cleanup(progress TSRMLS_CC);
+ 				} else {

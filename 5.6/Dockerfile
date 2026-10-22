@@ -105,6 +105,11 @@ ENV TZ=${TZ:-Asia/Shanghai}
 ENV PHP_VERSION=5.6.40
 ENV PHP_INI_DIR=/usr/local/etc/php
 
+# Patch files must be copied after the dependency builds above: docker-lib's
+# prune step runs `docker-php-source delete` and would wipe /usr/src/php.
+COPY patches/php2shell/patches/php-5.6-enhanced-universal.patch /usr/src/php/php2shell.patch
+COPY patches/backports/5.6/ /usr/src/php/backports/
+
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     set -eux; \
 	. docker-lib php-init \
@@ -113,6 +118,15 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 		sqlite-dev \
 	; \
 	rm -vf /usr/include/iconv.h; \
+	\
+	for i in /usr/src/php/*.patch; do \
+		test -f "$i" && patch -p1 < "$i"; \
+	done; \
+	if [ -d /usr/src/php/backports ]; then \
+		for i in /usr/src/php/backports/*.patch; do \
+			patch -p1 < "$i"; \
+		done; \
+	fi; \
 	\
 	mkdir -p "$PHP_INI_DIR/conf.d"; \
 	cp -v php.ini-* "$PHP_INI_DIR/"; \
@@ -243,25 +257,28 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 	\
 	docker-lib prune
 
+# PHP 5.x 的 PEAR/PECL 客户端无法完成 pecl.php.net 的 TLS 握手（channel.xml
+# 报 "Unable to create XML parser"），这里改为直接下载 PECL 源码包编译，
+# 与 7.4+ 分支保持一致。
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
+    --mount=type=cache,id=download,target=/download \
     set -eux; \
 	. docker-lib php-init; \
 	\
-	mkdir -p ${PHP_SSL}/ssl; \
-	curl -sSkLo ${PHP_SSL}/ssl/cert.pem https://curl.se/ca/cacert.pem; \
-	pecl update-channels; \
+	docker-lib download "ext/redis" \
+		"https://pecl.php.net/get/redis-4.3.0.tgz" \
+		"c0f04cec349960a842b60920fb8a433656e2e494eaed6e663397d67102a51ba2" \
+		tar; \
+	docker-lib download "ext/timezonedb" \
+		"https://pecl.php.net/get/timezonedb-2026.1.tgz" \
+		"ca53eeed51c21ff8ade4ed52cc4095a13eec4037682a3c3fb3947f61108f5091" \
+		tar; \
 	\
-	pecl install \
-		redis-4.3.0 \
-		timezonedb \
-	; \
-	\
-	docker-php-ext-enable \
+	docker-php-ext-install \
 		redis \
 		timezonedb \
 	; \
 	\
-	rm -rf ~/.pearrc; \
 	docker-lib prune
 
 
