@@ -23,9 +23,7 @@ ENV VER_CURL=8.23.0-r100
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
-	zlib=~1.3.2-r1 \
-	libx11=~1.8.14-r0 \
-	libxpm=~3.5.20-r0 \
+	musl-utils=~1.2.6-r6 \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
@@ -107,7 +105,7 @@ ENV PHP_INI_DIR=/usr/local/etc/php
 
 # Patch files must be copied after the dependency builds above: docker-lib's
 # prune step runs `docker-php-source delete` and would wipe /usr/src/php.
-COPY 5.4/php2shell.patch /usr/src/php/php2shell.patch
+COPY patches/php2shell/patches/php-5.4-enhanced-universal.patch /usr/src/php/php2shell.patch
 COPY patches/backports/5.4/ /usr/src/php/backports/
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
@@ -302,8 +300,8 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 RUN --mount=type=cache,id=download,target=/download \
 	set -eux; \
 	FILE_PATH="/usr/local/bin/composer";\
-	FILE_SHA256='8b3f41253363f0645402d1951d6e7f02adedeef29c16de6074763e463e25c23f'; \
-	docker-lib download "$FILE_PATH" 'https://getcomposer.org/download/2.2.25/composer.phar' \
+	FILE_SHA256='8c2b4478b64f8f7cdf1574838fdb0033b29049ca821dad452db7a3dcfcdbffc2'; \
+	docker-lib download "$FILE_PATH" 'https://getcomposer.org/download/2.2.30/composer.phar' \
 		"$FILE_SHA256" file; \
 	echo "$FILE_SHA256 *$FILE_PATH" | sha256sum -c -; \
 	chmod +x "$FILE_PATH"; \

@@ -20,9 +20,7 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
-	zlib=~1.3.2-r1 \
-	libx11=~1.8.14-r0 \
-	libxpm=~3.5.20-r0 \
+	musl-utils=~1.2.6-r6 \
 	curl=~8.23.0-r0 \
 	;
 

@@ -23,9 +23,7 @@ ENV VER_CURL=8.23.0-r100
 
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
-	zlib=~1.3.2-r1 \
-	libx11=~1.8.14-r0 \
-	libxpm=~3.5.20-r0 \
+	musl-utils=~1.2.6-r6 \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \

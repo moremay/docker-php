@@ -6,33 +6,40 @@ Thank [docker-library/php](https://github.com/docker-library/php) [Alpine](https
 
 Build images for php-fpm.
 
-+ alpine 3.24.2
++ alpine 3.24.3
 + php
   + php 8.5.12 2026-10-21
   + php 8.4.27 2026-10-21
-  + php 7.4.33 php2shell
-  + php 5.6.40 php2shell
-  + php 5.4.45 php2shell
+  + php 7.4.33 php2shell 1.4
+  + php 5.6.40 php2shell 1.4
+  + php 5.4.45 php2shell 1.4
++ 安全补丁：
+  + 5.4 / 5.6 / 7.4：php2shell 1.4 `enhanced-universal`（保留 session upload progress）
+  + 5.4 / 5.6 / 7.4：额外 CVE backports，见 `patches/backports/<ver>/`
+  + 5.4 / 5.6：`030-fix-php2shell-upload-progress-crash-with-max-parts.patch`，修复 `max_multipart_body_parts` 与上传进度组合导致的崩溃
 + ext. :
   + add shared :
-  bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, pdo_pgsql, pgsql, redis, sockets, sodium, timezonedb, xsl, zip
+  bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, pdo_odbc, pdo_pgsql, pgsql, redis, sockets, sodium, timezonedb, xsl, zip
   + iconv &nbsp;&nbsp;&nbsp;&nbsp; gnu libiconv 1.19
   + mcrypt &nbsp;&nbsp; php 5. php 7, 8: Alternatives: Sodium/OpenSSL
   + mysql &nbsp;&nbsp;&nbsp;&nbsp; php 5. php 7, 8: Alternatives: mysqli
   + odbc &nbsp;&nbsp;&nbsp;&nbsp; php 7, 8: unixODBC
-  + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.9.1); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.9.2); php 8: openssl 3.5.8
+  + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.9.4); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.9.4); php 8: Alpine system openssl 3.5.9
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
-  php 5: 2.2.25; php 7.4, 8: latest 2.10.3
+  php 5: 2.2.30; php 7.4, 8: latest stable (currently 2.10.3)
 + phpcs
 
+EOL 版本的补丁顺序为：先应用 `patches/php2shell` 中的 `php-<ver>-enhanced-universal.patch`，再按文件名顺序应用 `patches/backports/<ver>/*.patch`。backports 主要来自 [shivammathur/php-src-backports](https://github.com/shivammathur/php-src-backports)，仅选取与本镜像已启用扩展 / SAPI 相关的 CVE。首次构建或更新子模块后，先执行 `git submodule update --init --recursive`；更新补丁后，执行 `./create-dockerfile.sh` 重新生成各版本 Dockerfile。EOL 版本不能替代上游安全支持，条件允许时应升级到受支持版本。
+
 ```shell
-build.sh [[-v|--ver ]ver-dir-name] [-p] [--ali]
-  --ali           for os mirrors. Set args: mirrors=mirrors.aliyun.com gnu_mirrors=https://mirrors.aliyun.com/gnu
-  -p              push
-  -v, --ver VER[-PLAT]  dirname.
-                  If Dockerfile is in the current directory, can omit it.
-                  If it is the first argument, the switch symbol can be omitted.
+./build.sh <ver-dir-name> [options] [buildx options]
+  <ver-dir-name>  目录名，如 5.4、5.6、7.4、8.4、8.5
+  -v, --ver TAG   镜像 tag，可带仓库前缀；默认使用目录名
+  -p, --push      推送镜像
+  -t, --test      运行 trivy 和 test.sh
+  -m, --mirrors   使用南京大学镜像源
+  -c, --clear     清理 buildx 缓存
 ```
 
 ## PHPCompatibility
