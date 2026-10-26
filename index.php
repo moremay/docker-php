@@ -3,7 +3,9 @@ echo "PHP ". phpversion() . " ok\n";
 
 $output = [];
 $return_var = 0;
-exec('composer --version', $output, $return_var);
+// FPM may run with a cleared PATH, so prefer the absolute path when available
+$composer = is_executable('/usr/local/bin/composer') ? '/usr/local/bin/composer' : 'composer';
+exec($composer . ' --version 2>&1', $output, $return_var);
 if ($return_var === 0) {
     echo "" . $output[0] ."\n"; // 输出第一行，通常是版本信息
 } else {

@@ -20,8 +20,12 @@ fi
 INDEX_FILE="$(dirname "$(realpath "${BASH_SOURCE[0]}")")/index.php"
 
 # 启动容器（不挂载 index.php，避免 CI 中宿主路径不匹配）
-docker run -d --rm -p 9000:9000 --name test-php-fpm $image
+# 只监听回环地址并让 Docker 分配随机宿主端口，避免与宿主已有的 9000 服务冲突
+docker run -d --rm -p 127.0.0.1::9000 --name test-php-fpm $image
 trap 'docker stop test-php-fpm >/dev/null 2>&1 || true' EXIT
+
+HOST_PORT=$(docker port test-php-fpm 9000/tcp | head -n1 | sed 's/.*://')
+echo "PHP-FPM host port: $HOST_PORT"
 
 # 容器启动后用 docker cp 拷贝文件（不依赖宿主机路径，CI 和本地均可用）
 docker cp "$INDEX_FILE" test-php-fpm:/var/www/html/index.php
@@ -37,5 +41,5 @@ echo "PHP-FPM IP: $FPM_IP"
 
 if [ -z "$FPM_IP" ] || ! cgi-fcgi -bind -connect "${FPM_IP}:9000"; then
   echo "try local"
-  cgi-fcgi -bind -connect "127.0.0.1:9000"
+  cgi-fcgi -bind -connect "127.0.0.1:${HOST_PORT}"
 fi
