@@ -1,0 +1,34 @@
+diff --git a/ext/spl/spl_iterators.c b/ext/spl/spl_iterators.c
+index ff2f70f3..60d52ed8 100644
+--- a/ext/spl/spl_iterators.c
++++ b/ext/spl/spl_iterators.c
+@@ -2768,10 +2768,10 @@ SPL_METHOD(CachingIterator, __toString)
+ 		return;
+ 	}
+ 	if (intern->u.caching.flags & CIT_TOSTRING_USE_KEY) {
+-		if (!intern->current.str_key) {
+-			RETURN_EMPTY_STRING();
+-		}
+ 		if (intern->current.key_type == HASH_KEY_IS_STRING) {
++			if (!intern->current.str_key) {
++				RETURN_EMPTY_STRING();
++			}
+ 			RETURN_STRINGL(intern->current.str_key, intern->current.str_key_len-1, 1);
+ 		} else {
+ 			RETVAL_LONG(intern->current.int_key);
+diff --git a/tests/basic/GHSA-9pqp-7h25-4f32.phpt b/tests/basic/GHSA-9pqp-7h25-4f32.phpt
+index af819163..be025b66 100644
+--- a/tests/basic/GHSA-9pqp-7h25-4f32.phpt
++++ b/tests/basic/GHSA-9pqp-7h25-4f32.phpt
+@@ -18,6 +18,11 @@ function test($boundaryLen) {
+         getenv('TEST_PHP_CGI_EXECUTABLE'),
+         '-C',
+         '-n',
++        '-d', 'display_errors=1',
++        '-d', 'display_startup_errors=1',
++        '-d', 'html_errors=1',
++        '-d', 'error_reporting=-1',
++        '-d', 'default_charset=UTF-8',
+         __DIR__ . '/GHSA-9pqp-7h25-4f32.inc',
+     ];
+ 

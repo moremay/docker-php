@@ -1,0 +1,125 @@
+diff --git a/ext/iconv/iconv.c b/ext/iconv/iconv.c
+index 2a41e524..70945f1e 100644
+--- a/ext/iconv/iconv.c
++++ b/ext/iconv/iconv.c
+@@ -2580,7 +2580,7 @@ static int php_iconv_stream_filter_append_bucket(
+ 								break;
+ 							}
+ 						} else {
+-						    php_error_docref(NULL, E_WARNING, "iconv stream filter (\"%s\"=>\"%s\"): invalid multibyte sequence", self->from_charset, self->to_charset);
++						    php_error_docref(NULL TSRMLS_CC, E_WARNING, "iconv stream filter (\"%s\"=>\"%s\"): invalid multibyte sequence", self->from_charset, self->to_charset);
+ 						    goto out_failure;
+ 						}
+ 						break;
+diff --git a/ext/mysqlnd/mysqlnd_ps_codec.c b/ext/mysqlnd/mysqlnd_ps_codec.c
+index 68f0dbe0..fea890c7 100644
+--- a/ext/mysqlnd/mysqlnd_ps_codec.c
++++ b/ext/mysqlnd/mysqlnd_ps_codec.c
+@@ -54,7 +54,8 @@ struct st_mysqlnd_perm_bind mysqlnd_ps_fetch_functions[MYSQL_TYPE_LAST + 1];
+ 
+ static inline void ps_fetch_over_read_error(zend_uchar ** row)
+ {
+-	php_error_docref(NULL, E_WARNING, "Malformed server packet. Field length pointing after the end of packet");
++	TSRMLS_FETCH();
++	php_error_docref(NULL TSRMLS_CC, E_WARNING, "Malformed server packet. Field length pointing after the end of packet");
+ 	*row = NULL;
+ }
+ 
+diff --git a/ext/mysqlnd/mysqlnd_wireprotocol.c b/ext/mysqlnd/mysqlnd_wireprotocol.c
+index 13069d3c..ede5676b 100644
+--- a/ext/mysqlnd/mysqlnd_wireprotocol.c
++++ b/ext/mysqlnd/mysqlnd_wireprotocol.c
+@@ -649,7 +649,7 @@ php_mysqlnd_auth_response_read(void * _packet, MYSQLND_CONN_DATA * conn TSRMLS_D
+ 			 * and after that it can be checked that the net_len is not greater than the packet size */
+ 			if ((p - buf) > packet->header.size || packet->header.size - (p - buf) < net_len) {
+ 				DBG_ERR_FMT("OK packet message length is past the packet size");
+-				php_error_docref(NULL, E_WARNING, "OK packet message length is past the packet size");
++				php_error_docref(NULL TSRMLS_CC, E_WARNING, "OK packet message length is past the packet size");
+ 				DBG_RETURN(FAIL);
+ 			}
+ 			packet->message_len = net_len;
+@@ -1069,7 +1069,7 @@ php_mysqlnd_rset_header_read(void * _packet, MYSQLND_CONN_DATA * conn TSRMLS_DC)
+ 						size_t local_file_name_over_read = ((p - buf) - packet->header.size) + len;
+ 						DBG_ERR_FMT("RSET_HEADER packet additional data length is past %zu bytes the packet size",
+ 							local_file_name_over_read);
+-						php_error_docref(NULL, E_WARNING,
++						php_error_docref(NULL TSRMLS_CC, E_WARNING,
+ 							"RSET_HEADER packet additional data length is past %zu bytes the packet size",
+ 							local_file_name_over_read);
+ 						DBG_RETURN(FAIL);
+@@ -1254,7 +1254,7 @@ php_mysqlnd_rset_field_read(void * _packet, MYSQLND_CONN_DATA * conn TSRMLS_DC)
+ 		size_t current_offset = p - buf;
+ 		if (len > packet->header.size - current_offset) {
+ 			DBG_ERR_FMT("Def field length is past the packet size");
+-			php_error_docref(NULL, E_WARNING, "Def field length is past the packet size");
++			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Def field length is past the packet size");
+ 			DBG_RETURN(FAIL);
+ 		}
+ 
+@@ -1493,7 +1493,7 @@ php_mysqlnd_rowp_read_binary_protocol(MYSQLND_MEMORY_POOL_CHUNK * row_buffer, zv
+ 				for (j = 0, current_field = start_field; j < i; current_field++, j++) {
+ 					zval_ptr_dtor(current_field);
+ 				}
+-				php_error_docref(NULL, E_WARNING, "Malformed server packet. No packet space left for the field");
++				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Malformed server packet. No packet space left for the field");
+ 				DBG_RETURN(FAIL);
+ 			}
+ 			mysqlnd_ps_fetch_functions[type].func(*current_field, &fields_metadata[i], rbs - row_position, &p, as_unicode TSRMLS_CC);
+@@ -1591,7 +1591,7 @@ php_mysqlnd_rowp_read_text_protocol(MYSQLND_MEMORY_POOL_CHUNK * row_buffer, zval
+ 		const unsigned long len = php_mysqlnd_net_field_length(&p);
+ 
+ 		if (len != MYSQLND_NULL_LENGTH  && (p > packet_end || len > packet_end - p)) {
+-			php_error_docref(NULL, E_WARNING, "Malformed server packet. Field length pointing after end of packet");
++			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Malformed server packet. Field length pointing after end of packet");
+ 			DBG_RETURN(FAIL);
+ 		}
+ 		if (current_field > start_field && last_field_was_string) {
+diff --git a/ext/standard/exec.c b/ext/standard/exec.c
+index 5dc52b08..047671a4 100644
+--- a/ext/standard/exec.c
++++ b/ext/standard/exec.c
+@@ -488,7 +488,7 @@ PHP_FUNCTION(escapeshellcmd)
+ 
+ 	if (command_len) {
+ 		if (command_len != strlen(command)) {
+-			php_error_docref(NULL, E_ERROR, "Input string contains NULL bytes");
++			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Input string contains NULL bytes");
+ 			return;
+ 		}
+ 		cmd = php_escape_shell_cmd(command);
+@@ -513,7 +513,7 @@ PHP_FUNCTION(escapeshellarg)
+ 
+ 	if (argument) {
+ 		if (argument_len != strlen(argument)) {
+-			php_error_docref(NULL, E_ERROR, "Input string contains NULL bytes");
++			php_error_docref(NULL TSRMLS_CC, E_ERROR, "Input string contains NULL bytes");
+ 			return;
+ 		}
+ 		cmd = php_escape_shell_arg(argument);
+@@ -538,11 +538,11 @@ PHP_FUNCTION(shell_exec)
+ 	}
+ 
+        if (!command_len) {
+-               php_error_docref(NULL, E_WARNING, "Cannot execute a blank command");
++               php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot execute a blank command");
+                RETURN_FALSE;
+        }
+        if (strlen(command) != command_len) {
+-               php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
++               php_error_docref(NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
+                RETURN_FALSE;
+        }
+ 
+diff --git a/ext/standard/image.c b/ext/standard/image.c
+index fb8e6676..47c72e18 100644
+--- a/ext/standard/image.c
++++ b/ext/standard/image.c
+@@ -1400,7 +1400,7 @@ static void php_getimagesize_from_any(INTERNAL_FUNCTION_PARAMETERS, int mode) {
+ 	}
+ 
+ 	if (mode == FROM_PATH && CHECK_NULL_PATH(input, input_len)) {
+-		php_error_docref(NULL, E_WARNING, "Invalid path");
++		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Invalid path");
+ 		return;
+ 	}
+ 

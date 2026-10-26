@@ -1,0 +1,14 @@
+diff --git a/Zend/zend_API.h b/Zend/zend_API.h
+index e8666f0b..06052963 100644
+--- a/Zend/zend_API.h
++++ b/Zend/zend_API.h
+@@ -573,6 +573,9 @@ END_EXTERN_C()
+ 		const char *__s=(s);				\
+ 		zval *__z = (z);					\
+ 		Z_STRLEN_P(__z) = strlen(__s);		\
++		if (UNEXPECTED(Z_STRLEN_P(__z) < 0)) { \
++			zend_error(E_ERROR, "String size overflow"); \
++		} \
+ 		Z_STRVAL_P(__z) = (duplicate?estrndup(__s, Z_STRLEN_P(__z)):(char*)__s);\
+ 		Z_TYPE_P(__z) = IS_STRING;			\
+ 	} while (0)

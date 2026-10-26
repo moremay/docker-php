@@ -14,8 +14,10 @@ Build images for php-fpm.
   + php 5.6.40 php2shell 1.4
   + php 5.4.45 php2shell 1.4
 + 安全补丁：
-  + 5.4 / 5.6 / 7.4：php2shell 1.4 `enhanced-universal`（保留 session upload progress）
-  + 5.4 / 5.6 / 7.4：额外 CVE backports，见 `patches/backports/<ver>/`
+  + 5.4 / 5.6 / 7.4：php2shell 1.4 `enhanced-universal`
+  + 5.4 / 5.6 / 7.4：上游 CVE backports，见 `patches/backports/<ver>/`
+  + 5.4 / 5.6：回移 CVE-2019-11043（FPM `path_info` 下溢 RCE）与 CVE-2026-109618/109619（bailout 状态损坏）；后者同时强制禁用 session upload progress 回调，与上游修复一致
+  + 7.4：`048-fix-ghsa-4w77-75f9-2c8w.patch`（`php -S` content-type UAF）
   + 5.4 / 5.6：`030-fix-php2shell-upload-progress-crash-with-max-parts.patch`，修复 `max_multipart_body_parts` 与上传进度组合导致的崩溃
 + ext. :
   + add shared :

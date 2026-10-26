@@ -1,0 +1,15 @@
+diff --git a/ext/gd/libgd/gd.c b/ext/gd/libgd/gd.c
+index fa75898d..4fe91d87 100644
+--- a/ext/gd/libgd/gd.c
++++ b/ext/gd/libgd/gd.c
+@@ -133,6 +133,10 @@ gdImagePtr gdImageCreate (int sx, int sy)
+ 		return NULL;
+ 	}
+ 
++	if (overflow2(sizeof(unsigned char *), sx)) {
++		return NULL;
++	}
++
+ 	im = (gdImage *) gdCalloc(1, sizeof(gdImage));
+ 
+ 	/* Row-major ever since gd 1.3 */

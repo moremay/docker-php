@@ -1,0 +1,13 @@
+diff --git a/ext/standard/link_win32.c b/ext/standard/link_win32.c
+index 059201c6..4c537dbf 100644
+--- a/ext/standard/link_win32.c
++++ b/ext/standard/link_win32.c
+@@ -208,7 +208,7 @@ PHP_FUNCTION(link)
+ 
+ 	/*First argument to link function is the target and hence should go to frompath
+ 	  Second argument to link function is the link itself and hence should go to topath */
+-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &frompath, &frompath_len, &topath, &topath_len) == FAILURE) {
++	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "pp", &frompath, &frompath_len, &topath, &topath_len) == FAILURE) {
+ 		return;
+ 	}
+ 

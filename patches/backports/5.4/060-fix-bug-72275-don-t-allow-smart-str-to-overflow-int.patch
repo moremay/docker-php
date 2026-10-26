@@ -1,0 +1,14 @@
+diff --git a/ext/standard/php_smart_str.h b/ext/standard/php_smart_str.h
+index d59258f0..90d67519 100644
+--- a/ext/standard/php_smart_str.h
++++ b/ext/standard/php_smart_str.h
+@@ -63,6 +63,9 @@
+ 		newlen = (d)->len + (n);									\
+ 		if (newlen >= (d)->a) {										\
+ 			(d)->a = newlen + SMART_STR_PREALLOC;					\
++	        if (UNEXPECTED((d)->a >= INT_MAX)) {					\
++                zend_error(E_ERROR, "String size overflow");		\
++            }														\
+ 			SMART_STR_DO_REALLOC(d, what);							\
+ 		}															\
+ 	}																\

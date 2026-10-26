@@ -1,0 +1,13 @@
+diff --git a/ext/gd/libgd/gd_io_dp.c b/ext/gd/libgd/gd_io_dp.c
+index bfeb4cb4..4dcedde8 100644
+--- a/ext/gd/libgd/gd_io_dp.c
++++ b/ext/gd/libgd/gd_io_dp.c
+@@ -237,7 +237,7 @@ static int dynamicGetbuf (gdIOCtxPtr ctx, void *buf, int len)
+ 	if (remain >= len) {
+ 		rlen = len;
+ 	} else {
+-		if (remain == 0) {
++		if (remain <= 0) {
+ 			return EOF;
+ 		}
+ 		rlen = remain;

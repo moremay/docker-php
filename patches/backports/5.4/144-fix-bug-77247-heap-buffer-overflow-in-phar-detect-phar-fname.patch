@@ -1,0 +1,13 @@
+diff --git a/ext/phar/phar.c b/ext/phar/phar.c
+index 7cdf222d..49f61c98 100644
+--- a/ext/phar/phar.c
++++ b/ext/phar/phar.c
+@@ -2046,7 +2046,7 @@ next_extension:
+ 	}
+ 
+ 	while (pos != filename && (*(pos - 1) == '/' || *(pos - 1) == '\0')) {
+-		pos = memchr(pos + 1, '.', filename_len - (pos - filename) + 1);
++		pos = memchr(pos + 1, '.', filename_len - (pos - filename) - 1);
+ 		if (!pos) {
+ 			return FAILURE;
+ 		}

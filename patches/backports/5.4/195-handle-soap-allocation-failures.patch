@@ -1,0 +1,14 @@
+diff --git a/ext/session/mod_files.c b/ext/session/mod_files.c
+index 36612ea9..cc7f5b70 100644
+--- a/ext/session/mod_files.c
++++ b/ext/session/mod_files.c
+@@ -278,6 +278,9 @@ PS_OPEN_FUNC(files)
+ 	if (*save_path == '\0') {
+ 		/* if save path is an empty string, determine the temporary dir */
+ 		save_path = php_get_temporary_directory();
++		if (save_path == NULL) {
++			return FAILURE;
++		}
+ 
+ 		if (php_check_open_basedir(save_path TSRMLS_CC)) {
+ 			return FAILURE;

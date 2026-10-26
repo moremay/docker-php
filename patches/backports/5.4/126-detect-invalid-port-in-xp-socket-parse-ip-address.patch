@@ -1,0 +1,56 @@
+diff --git a/main/streams/xp_socket.c b/main/streams/xp_socket.c
+index 53f0769a..b9a9d2f9 100644
+--- a/main/streams/xp_socket.c
++++ b/main/streams/xp_socket.c
+@@ -524,10 +524,9 @@ static inline int parse_unix_address(php_stream_xport_param *xparam, struct sock
+ static inline char *parse_ip_address_ex(const char *str, int str_len, int *portno, int get_err, char **err TSRMLS_DC)
+ {
+ 	char *colon;
+-	char *host = NULL;
+ 
+ #ifdef HAVE_IPV6
+-	char *p;
++	char *p, *e = NULL;
+ 
+ 	if (*(str) == '[' && str_len > 1) {
+ 		/* IPV6 notation to specify raw address with port (i.e. [fe80::1]:80) */
+@@ -538,7 +537,13 @@ static inline char *parse_ip_address_ex(const char *str, int str_len, int *portn
+ 			}
+ 			return NULL;
+ 		}
+-		*portno = atoi(p + 2);
++		*portno = strtol(p + 2, &e, 10);
++		if (e && *e) {
++			if (get_err) {
++				spprintf(err, 0, "Failed to parse address \"%s\"", str);
++			}
++			return NULL;
++		}
+ 		return estrndup(str + 1, p - str - 1);
+ 	}
+ #endif
+@@ -548,16 +553,16 @@ static inline char *parse_ip_address_ex(const char *str, int str_len, int *portn
+ 		colon = NULL;
+ 	}
+ 	if (colon) {
+-		*portno = atoi(colon + 1);
+-		host = estrndup(str, colon - str);
+-	} else {
+-		if (get_err) {
+-			spprintf(err, 0, "Failed to parse address \"%s\"", str);
++		e = NULL;
++		*portno = strtol(colon + 1, &e, 10);
++		if (!e || !*e) {
++			return estrndup(str, colon - str);
+ 		}
+-		return NULL;
+ 	}
+-
+-	return host;
++	if (get_err) {
++		spprintf(err, 0, "Failed to parse address \"%s\"", str);
++	}
++	return NULL;
+ }
+ 
+ static inline char *parse_ip_address(php_stream_xport_param *xparam, int *portno TSRMLS_DC)

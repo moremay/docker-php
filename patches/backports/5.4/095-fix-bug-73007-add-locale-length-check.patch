@@ -1,0 +1,13 @@
+diff --git a/ext/intl/msgformat/msgformat_format.c b/ext/intl/msgformat/msgformat_format.c
+index 9a18ac0a..6939a8ab 100644
+--- a/ext/intl/msgformat/msgformat_format.c
++++ b/ext/intl/msgformat/msgformat_format.c
+@@ -135,6 +135,8 @@ PHP_FUNCTION( msgfmt_format_message )
+ 		RETURN_FALSE;
+ 	}
+ 
++	INTL_CHECK_LOCALE_LEN(slocale_len);
++
+ 	msgformat_data_init(&mfo->mf_data TSRMLS_CC);
+ 
+ 	if(pattern && pattern_len) {

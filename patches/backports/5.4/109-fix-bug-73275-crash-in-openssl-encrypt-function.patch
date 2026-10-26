@@ -1,0 +1,33 @@
+diff --git a/ext/openssl/openssl.c b/ext/openssl/openssl.c
+--- a/ext/openssl/openssl.c
++++ b/ext/openssl/openssl.c
+@@ -4884,7 +4884,7 @@
+ 		outlen += EVP_CIPHER_block_size(cipher_type);
+ 	}
+ #endif
+-	outbuf = emalloc(outlen + 1);
++	outbuf = safe_emalloc(outlen, 1, 1);
+ 
+ 	EVP_EncryptInit(&cipher_ctx, cipher_type, NULL, NULL);
+ 	if (password_len > keylen) {
+@@ -4902,14 +4902,18 @@
+ 		outlen += i;
+ 		if (options & OPENSSL_RAW_DATA) {
+ 			outbuf[outlen] = '\0';
+-			RETVAL_STRINGL((char *)outbuf, outlen, 0);
++			RETVAL_STRINGL_CHECK((char *)outbuf, outlen, 0);
+ 		} else {
+ 			int base64_str_len;
+ 			char *base64_str;
+ 
+ 			base64_str = (char*)php_base64_encode(outbuf, outlen, &base64_str_len);
+ 			efree(outbuf);
+-			RETVAL_STRINGL(base64_str, base64_str_len, 0);
++			if (!base64_str) {
++				RETVAL_FALSE;
++			} else {
++				RETVAL_STRINGL(base64_str, base64_str_len, 0);
++			}
+ 		}
+ 	} else {
+ 		efree(outbuf);

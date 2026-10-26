@@ -1,0 +1,15 @@
+diff --git a/ext/standard/dns.c b/ext/standard/dns.c
+index d2686090..3ece48bd 100644
+--- a/ext/standard/dns.c
++++ b/ext/standard/dns.c
+@@ -454,6 +454,10 @@ static u_char *php_parserr(u_char *cp, u_char *end, querybuf *answer, int type_t
+ 	GETLONG(ttl, cp);
+ 	GETSHORT(dlen, cp);
+ 	CHECKCP(dlen);
++	if (dlen == 0) {
++		/* No data in the response - nothing to do */
++		return NULL;
++	}
+ 	if (type_to_fetch != T_ANY && type != type_to_fetch) {
+ 		cp += dlen;
+ 		return cp;

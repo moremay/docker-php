@@ -1,0 +1,13 @@
+diff --git a/ext/spl/spl_directory.c b/ext/spl/spl_directory.c
+index 8cd352f0..44a909ce 100644
+--- a/ext/spl/spl_directory.c
++++ b/ext/spl/spl_directory.c
+@@ -1131,7 +1131,7 @@ SPL_METHOD(SplFileInfo, __construct)
+ 
+ 	zend_replace_error_handling(EH_THROW, spl_ce_RuntimeException, &error_handling TSRMLS_CC);
+ 
+-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &path, &len) == FAILURE) {
++	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "p", &path, &len) == FAILURE) {
+ 		zend_restore_error_handling(&error_handling TSRMLS_CC);
+ 		return;
+ 	}

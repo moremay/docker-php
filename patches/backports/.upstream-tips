@@ -1,0 +1,6 @@
+# Last upstream tips checked per PHP version.
+# Format: <version> <full-commit-sha> <checked-date>
+# Full SHA is required: "git log <old>..<new>" needs an exact commit.
+5.4 265592acdd43d84d2c33663f3f4f67432826e627 2026-10-26
+5.6 c55d0846958d4baf2c9b7a40c7543f7ccab51383 2026-10-26
+7.4 9f3f6763497aa556d3fc56df7e66f44b8de49815 2026-10-26

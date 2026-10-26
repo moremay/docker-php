@@ -1,0 +1,13 @@
+diff --git a/ext/phar/zip.c b/ext/phar/zip.c
+index ed156a2d..3ab02ab3 100644
+--- a/ext/phar/zip.c
++++ b/ext/phar/zip.c
+@@ -682,7 +682,7 @@ foundit:
+ 			efree(actual_alias);
+ 		}
+ 
+-		zend_hash_add(&(PHAR_GLOBALS->phar_alias_map), actual_alias, mydata->alias_len, (void*)&mydata, sizeof(phar_archive_data*), NULL);
++		zend_hash_add(&(PHAR_GLOBALS->phar_alias_map), mydata->alias, mydata->alias_len, (void*)&mydata, sizeof(phar_archive_data*), NULL);
+ 	} else {
+ 		phar_archive_data **fd_ptr;
+ 

@@ -1,0 +1,13 @@
+diff --git a/ext/standard/string.c b/ext/standard/string.c
+index 978007a5..230d1ef2 100644
+--- a/ext/standard/string.c
++++ b/ext/standard/string.c
+@@ -4290,7 +4290,7 @@ PHP_FUNCTION(nl2br)
+ {
+ 	/* in brief this inserts <br /> or <br> before matched regexp \n\r?|\r\n? */
+ 	char		*tmp, *str;
+-	int		new_length;
++	size_t		new_length;
+ 	char		*end, *target;
+ 	int		repl_cnt = 0;
+ 	int		str_len;
