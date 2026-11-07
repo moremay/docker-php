@@ -13,6 +13,7 @@ echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories
 echo 'https://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories
 echo '/usr/src/repo/' >> /etc/apk/repositories
 apk update
+cat /etc/alpine-release
 "
 
 get_ver() {
