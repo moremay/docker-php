@@ -6,19 +6,20 @@ Thank [docker-library/php](https://github.com/docker-library/php) [Alpine](https
 
 Build images for php-fpm.
 
-+ alpine 3.24.3
++ alpine 3.24.4
 + php
   + php 8.5.12 2026-10-21
   + php 8.4.27 2026-10-21
-  + php 7.4.33 php2shell 1.4
-  + php 5.6.40 php2shell 1.4
-  + php 5.4.45 php2shell 1.4
+  + php 7.4.33 php2shell 1.4 (e57e652)
+  + php 5.6.40 php2shell 1.4 (e57e652)
+  + php 5.4.45 php2shell 1.4 (e57e652)
 + 安全补丁：
   + 5.4 / 5.6 / 7.4：php2shell 1.4 `enhanced-universal`
   + 5.4 / 5.6 / 7.4：上游 CVE backports，见 `patches/backports/<ver>/`
   + 5.4 / 5.6：回移 CVE-2019-11043（FPM `path_info` 下溢 RCE）与 CVE-2026-109618/109619（bailout 状态损坏）；后者同时强制禁用 session upload progress 回调，与上游修复一致
   + 7.4：`048-fix-ghsa-4w77-75f9-2c8w.patch`（`php -S` content-type UAF）
   + 5.4 / 5.6：`030-fix-php2shell-upload-progress-crash-with-max-parts.patch`，修复 `max_multipart_body_parts` 与上传进度组合导致的崩溃
+  + 5.4：php2shell v1.4 `e57e652` 修正 `main/rfc1867.c` 中多余的空白跳过循环，旧版补丁会吞掉 multipart 头值（如 `Content-Disposition`）的首字符
 + ext. :
   + add shared :
   bcmath, bz2, exif, gd, gettext, gmp, mcrypt, mysql, mysqli, opcache, openssl, pdo_mysql, pdo_odbc, pdo_pgsql, pgsql, redis, sockets, sodium, timezonedb, xsl, zip
@@ -29,10 +30,10 @@ Build images for php-fpm.
   + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.9.4); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.9.4); php 8: Alpine system openssl 3.5.9
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
-  php 5: 2.2.30; php 7.4, 8: latest stable (currently 2.10.3)
+  php 5: 2.2.30; php 7.4, 8: latest stable (currently 2.11.1)
 + phpcs
 
-EOL 版本的补丁顺序为：先应用 `patches/php2shell` 中的 `php-<ver>-enhanced-universal.patch`，再按文件名顺序应用 `patches/backports/<ver>/*.patch`。backports 主要来自 [shivammathur/php-src-backports](https://github.com/shivammathur/php-src-backports)，仅选取与本镜像已启用扩展 / SAPI 相关的 CVE。首次构建或更新子模块后，先执行 `git submodule update --init --recursive`；更新补丁后，执行 `./create-dockerfile.sh` 重新生成各版本 Dockerfile。EOL 版本不能替代上游安全支持，条件允许时应升级到受支持版本。
+EOL 版本的补丁顺序为：先应用 `patches/php2shell` 中的 `php-<ver>-enhanced-universal.patch`，再按文件名顺序应用 `patches/backports/<ver>/*.patch`。backports 主要来自 [shivammathur/php-src-backports](https://github.com/shivammathur/php-src-backports)，仅选取与本镜像已启用扩展 / SAPI 相关的 CVE；补丁更新与检查流程见下文「补丁与维护」。EOL 版本不能替代上游安全支持，条件允许时应升级到受支持版本。
 
 ```shell
 ./build.sh <ver-dir-name> [options] [buildx options]
@@ -43,6 +44,38 @@ EOL 版本的补丁顺序为：先应用 `patches/php2shell` 中的 `php-<ver>-e
   -m, --mirrors   使用南京大学镜像源
   -c, --clear     清理 buildx 缓存
 ```
+
+## 补丁与维护
+
+`patches/php2shell` 子模块固定在上游 `v1.4-enhanced-45`（`e57e652`）；`patches/backports/.upstream-tips` 记录每个 EOL 版本已检查到的上游 backports tip（`<版本> <SHA> <检查日期>`）。
+
+```shell
+git submodule update --init --recursive   # 首次克隆或子模块升级后
+./check-backports.sh                     # 检查上游新提交是否已回移；无缺口时自动更新 .upstream-tips
+./check-backports.sh --versions 5.4 --no-update
+./create-dockerfile.sh                   # 修改 Dockerfile.template 后重新生成各版本 Dockerfile
+```
+
+`check-backports.sh` 对每条上游新提交输出判定：
+
+| 判定 | 含义 |
+|---|---|
+| `COVERED` | 相关 hunk 已存在于本地补丁链（`git apply -R` 可回退） |
+| `MISSING` | 上游补丁可正向应用，本地缺失，需要回移 |
+| `REVIEW` | 文件相关但 hunk 不匹配，需人工确认 |
+| `SKIP` | 仅测试 / NEWS / 本镜像未构建的扩展或 SAPI |
+
+其它脚本：
+
+| 脚本 | 作用 |
+|---|---|
+| `./sync-download.sh` | 预下载全部依赖到 `.download/` |
+| `./check-apk.sh [pkg…]` | 在 alpine 容器中查询 apk 包版本，并输出 `/etc/alpine-release` |
+| `./check-versions.sh` | trivy 扫描镜像 + 检查 PHP / Alpine 新版本 |
+| `./check-layers.sh <image> [-a]` | 列出镜像各层及大小 |
+| `./test.sh <image>` | 启动 FPM 容器做 HTTP / Composer / OpenSSL 冒烟测试 |
+
+构建用的 apk 包在 Dockerfile 中按版本固定（`musl-utils`、`zlib`、PHP 5/7 的 `curl`/`wolfssl` 等），alpine 仓库变动时构建会直接失败而不是静默升级。
 
 ## PHPCompatibility
 
