@@ -16,7 +16,7 @@ Build images for php-fpm.
 + 安全补丁：
   + 5.4 / 5.6 / 7.4：php2shell 1.4 `enhanced-universal`
   + 5.4 / 5.6 / 7.4：上游 CVE backports，见 `patches/backports/<ver>/`
-  + 全部版本：libxml2 2.13.9-r100（本地 apk，backport CVE-2026-86137～86144），见 `apk/update-libxml2.sh`
+  + 全部版本：libxml2 2.13.9-r100（本地 apk，backport CVE-2026-86137～86144），见 [alpine-apk](https://github.com/moremay/alpine-apk) 仓库（`apk/` 子模块）
   + 5.4 / 5.6：回移 CVE-2019-11043（FPM `path_info` 下溢 RCE）与 CVE-2026-109618/109619（bailout 状态损坏）；后者同时强制禁用 session upload progress 回调，与上游修复一致
   + 7.4：`048-fix-ghsa-4w77-75f9-2c8w.patch`（`php -S` content-type UAF）
   + 5.4 / 5.6：`030-fix-php2shell-upload-progress-crash-with-max-parts.patch`，修复 `max_multipart_body_parts` 与上传进度组合导致的崩溃
@@ -72,12 +72,27 @@ git submodule update --init --recursive   # 首次克隆或子模块升级后
 |---|---|
 | `./sync-download.sh` | 预下载全部依赖到 `.download/` |
 | `./check-apk.sh [pkg…]` | 在 alpine 容器中查询 apk 包版本，并输出 `/etc/alpine-release` |
-| `./apk/update-libxml2.sh` | 拉取 Alpine `main/libxml2`，追加 `apk/libxml2-backports/` 下的 CVE 补丁并生成 2.13.9-r100 |
+| `./apk/update-libxml2.sh` | 拉取 Alpine `main/libxml2`，追加 `apk/libxml2-backports/` 下的 CVE 补丁并生成 2.13.9-r100（属 apk 子模块） |
 | `./check-versions.sh` | trivy 扫描镜像 + 检查 PHP / Alpine 新版本 |
 | `./check-layers.sh <image> [-a]` | 列出镜像各层及大小 |
 | `./test.sh <image>` | 启动 FPM 容器做 HTTP / Composer / OpenSSL 冒烟测试 |
 
 构建用的 apk 包在 Dockerfile 中按版本固定（`musl-utils`、`zlib`、`libxml2`、PHP 5/7 的 `curl`/`wolfssl` 等），alpine 仓库变动时构建会直接失败而不是静默升级。
+
+### apk 子模块
+
+`apk/` 已拆分为独立仓库 [moremay/alpine-apk](https://github.com/moremay/alpine-apk)，以子模块形式挂载（与 `patches/php2shell` 相同）：
+
+```shell
+git submodule update --init --recursive   # 首次克隆或子模块更新后
+cd apk && git pull && cd ..               # 升级 apk 仓库
+```
+
+该仓库负责 wolfssl / curl / libxml2 的 APKBUILD 与 CVE 补丁、`build-apk.sh`、`update-*.sh`，说明见其 `README.md`。注意两点：
+
+- `apk/x86_64/`（构建产物）和 `apk/.abuild/`（签名密钥）都不入库，Dockerfile 却要 `COPY apk/x86_64` 与 `apk/.abuild/*.pub`。**克隆后必须先 `cd apk && ./build-apk.sh`**，否则镜像构建会在 COPY 阶段失败。
+- 子模块 commit 变化不影响 `apk/x86_64/` 里的既有产物，改了 APKBUILD 后需重新构建并提交新的索引/版本号。
+
 
 ## PHPCompatibility
 

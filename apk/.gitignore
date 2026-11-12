@@ -1,7 +1,0 @@
-.*
-*.bak
-x86_64
-pkg
-src
-tmp
-!.gitignore

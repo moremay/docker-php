@@ -1,3 +1,6 @@
 [submodule "patches/php2shell"]
 	path = patches/php2shell
 	url = https://github.com/Anton-Barinov/php2shell-patches.git
+[submodule "apk"]
+	path = apk
+	url = ssh://git@git.home1.lan:2234/a/alpine-apk.git
