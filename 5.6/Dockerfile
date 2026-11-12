@@ -18,7 +18,7 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 	fi; \
 	echo '/usr/src/repo/' >> /etc/apk/repositories
 
-# 本地 backport 包（apk/update-libxml2.sh 生成）
+# 本地 backport 包（libxml2 CVE 修复）
 ENV VER_LIBXML2=2.13.9-r100
 
 ENV VER_WOLFSSL=5.9.4-r100
