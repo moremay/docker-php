@@ -3,4 +3,4 @@
 	url = https://github.com/Anton-Barinov/php2shell-patches.git
 [submodule "apk"]
 	path = apk
-	url = ssh://git@git.home1.lan:2234/a/alpine-apk.git
+	url = https://github.com/moremay/alpine-apk.git
