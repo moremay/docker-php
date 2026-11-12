@@ -18,6 +18,9 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 	fi; \
 	echo '/usr/src/repo/' >> /etc/apk/repositories
 
+# 本地 backport 包（apk/update-libxml2.sh 生成）
+ENV VER_LIBXML2=2.13.9-r100
+
 ENV VER_WOLFSSL=5.9.4-r100
 ENV VER_CURL=8.23.0-r100
 
@@ -25,6 +28,9 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
 	musl-utils=~1.2.6-r6 \
 	zlib=~1.4-r0 \
+	libxml2=${VER_LIBXML2} \
+	libcrypto3=~3.5.9-r1 \
+	libssl3=~3.5.9-r1 \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
@@ -82,7 +88,7 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 		argon2-dev \
 		coreutils \
 		libsodium-dev \
-		libxml2-dev \
+		libxml2-dev=${VER_LIBXML2} \
 		linux-headers \
 		oniguruma-dev \
 		readline-dev \

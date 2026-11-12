@@ -8,6 +8,7 @@ on:
       - "apk/**/APKBUILD"
       - "apk/**/*.patch"
       - "apk/bin/build.sh"
+      - "apk/*.sh"
 
 jobs:
   build:

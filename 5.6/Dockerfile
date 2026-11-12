@@ -18,6 +18,9 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 	fi; \
 	echo '/usr/src/repo/' >> /etc/apk/repositories
 
+# 本地 backport 包（apk/update-libxml2.sh 生成）
+ENV VER_LIBXML2=2.13.9-r100
+
 ENV VER_WOLFSSL=5.9.4-r100
 ENV VER_CURL=8.23.0-r100
 
@@ -25,6 +28,9 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
 	musl-utils=~1.2.6-r6 \
 	zlib=~1.4-r0 \
+	libxml2=${VER_LIBXML2} \
+	libcrypto3=~3.5.9-r1 \
+	libssl3=~3.5.9-r1 \
 	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
@@ -69,20 +75,6 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 	./configure --prefix=${TARGET}; \
 	docker-lib make
 
-RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
-	--mount=type=cache,id=download,target=/download \
-    set -ex; \
-	. docker-lib init "libxml2-2.12" \
-		"https://download.gnome.org/sources/libxml2/2.12/libxml2-2.12.10.tar.xz" \
-		"c3d8c0c34aa39098f66576fe51969db12a5100b956233dc56506f7a8679be995"; \
-	sed 's/LIBXML_MAJOR_VERSION=2/LIBXML_MAJOR_VERSION=102/' -i configure; \
-	./configure --prefix=$TARGET \
-		--with-python=no \
-		--with-lzma \
-		--with-zlib \
-		; \
-	docker-lib make
-
 # alpine: freetype-config not found.
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 	--mount=type=cache,id=download,target=/download \
@@ -113,6 +105,7 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     set -eux; \
 	. docker-lib php-init \
 		curl-dev=${VER_CURL} \
+		libxml2-dev=${VER_LIBXML2} \
 		readline-dev \
 		sqlite-dev \
 	; \
@@ -150,7 +143,7 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 		--enable-mysqlnd \
 		--with-curl=/usr \
 		--with-iconv=/usr/local \
-		--with-libxml-dir=/usr/local \
+		--with-libxml-dir=/usr \
 		--with-mhash \
 		--with-onig \
 		--with-openssl=${PHP_SSL} \
@@ -219,7 +212,7 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 		libmcrypt-dev \
 		libpng-dev \
 		libvpx-dev~1.17.0-r0 \
-		libxml2-dev \
+		libxml2-dev=${VER_LIBXML2} \
 		libxpm-dev \
 		libxslt-dev \
 		postgresql18-dev \
