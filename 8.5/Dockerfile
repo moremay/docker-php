@@ -21,6 +21,9 @@ RUN echo 'https://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositor
 # 本地 backport 包（libxml2 CVE 修复）
 ENV VER_LIBXML2=2.13.9-r100
 
+# zlib: alpine:3.24 基础镜像仍带 1.3.2-r1，只有显式 pin 才会升级到 1.4-r0
+# curl: ver<8 用 wolfssl 后端，ver>=8 用 openssl（官方包）
+# 注意：不要在这些续行参数中间插注释，注释会截断 apk add 命令（后续参数变成赋值语句，且不报错）
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
 	musl-utils=~1.2.6-r6 \

@@ -28,10 +28,11 @@ Build images for php-fpm.
   + mcrypt &nbsp;&nbsp; php 5. php 7, 8: Alternatives: Sodium/OpenSSL
   + mysql &nbsp;&nbsp;&nbsp;&nbsp; php 5. php 7, 8: Alternatives: mysqli
   + odbc &nbsp;&nbsp;&nbsp;&nbsp; php 7, 8: unixODBC
-  + openssl &nbsp; php 5: openssl 1.0.2u (curl uses wolfssl 5.9.4); php 7.4: openssl 1.1.1w (curl uses wolfssl 5.9.4); php 8: Alpine system openssl 3.5.9
+  + openssl &nbsp; php 5.4/5.6: 1.0.2u（源码编译到 `/usr/local/ssl1.0`）；php 7.4: 1.1.1w（源码编译到 `/usr/local/ssl1.1`）；php 8.4/8.5: Alpine 系统的 3.5.9（`libssl3`/`libcrypto3` 3.5.9-r1）。php < 8 的 php 二进制链接自编译库，Alpine 自带的 3.5.9 只供 curl 等系统组件使用
+  + curl 后端 &nbsp; php 5.4/5.6/7.4: wolfssl 5.9.4（本地仓库的 curl 8.23.0-r100）；php 8.4/8.5: openssl 3.5.9（官方 curl 8.23.0-r0）
   + sodium &nbsp;&nbsp; php 7, 8
 + composer
-  php 5: 2.2.30; php 7.4, 8: latest stable (currently 2.11.1)
+  php 5.4/5.6: 2.2.30（版本与 sha256 固定）；php 7.4/8.4/8.5: 构建时下载 latest stable，目前 2.11.2（随上游变化）
 + phpcs
 
 EOL 版本的补丁顺序为：先应用 `patches/php2shell` 中的 `php-<ver>-enhanced-universal.patch`，再按文件名顺序应用 `patches/backports/<ver>/*.patch`。backports 主要来自 [shivammathur/php-src-backports](https://github.com/shivammathur/php-src-backports)，仅选取与本镜像已启用扩展 / SAPI 相关的 CVE；补丁更新与检查流程见下文「补丁与维护」。EOL 版本不能替代上游安全支持，条件允许时应升级到受支持版本。

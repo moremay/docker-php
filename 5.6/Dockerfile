@@ -24,6 +24,9 @@ ENV VER_LIBXML2=2.13.9-r100
 ENV VER_WOLFSSL=5.9.4-r100
 ENV VER_CURL=8.23.0-r100
 
+# zlib: alpine:3.24 基础镜像仍带 1.3.2-r1，只有显式 pin 才会升级到 1.4-r0
+# curl: ver<8 用 wolfssl 后端，ver>=8 用 openssl（官方包）
+# 注意：不要在这些续行参数中间插注释，注释会截断 apk add 命令（后续参数变成赋值语句，且不报错）
 RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
     apk add --allow-untrusted --cache-dir /apk-cache \
 	musl-utils=~1.2.6-r6 \
@@ -31,7 +34,6 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 	libxml2=${VER_LIBXML2} \
 	libcrypto3=~3.5.9-r1 \
 	libssl3=~3.5.9-r1 \
-	# curl 使用 wolfssl, php 使用 openssl
 	wolfssl=${VER_WOLFSSL} \
 	curl=${VER_CURL} \
 	;
@@ -211,7 +213,7 @@ RUN --mount=type=cache,id=apk-cache,target=/apk-cache \
 		libjpeg-turbo-dev \
 		libmcrypt-dev \
 		libpng-dev \
-		libvpx-dev~1.17.0-r0 \
+		libvpx-dev=~1.17.0-r0 \
 		libxml2-dev=${VER_LIBXML2} \
 		libxpm-dev \
 		libxslt-dev \
